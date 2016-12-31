@@ -1,6 +1,7 @@
 package in.entrylog.entrylog.main.bluetooth;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -13,8 +14,13 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Parcelable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AlertDialog;
@@ -39,6 +45,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -97,6 +104,9 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
     PrintingService printingService;
     FieldsService fieldsService;
     static ArrayList<String> printingorder, printingdisplay;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    boolean nfcavailable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -275,7 +285,6 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
 
             CheckScanning();
             BluetoothTimerThread();
-        } else {
         }
 
         //region Result Display
@@ -294,6 +303,14 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
         tv_exit.setText(CheckoutUser);
         DisplayFields();
         //endregion
+
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+            }
+        }
 
         Checkout_btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -492,6 +509,7 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
                 try {
                     if (detailsValue.isVisitorsCheckOutSuccess()) {
                         detailsValue.setVisitorsCheckOutSuccess(false);
+                        checkingoutthread.interrupt();
                         dialog.dismiss();
                         Toast.makeText(Visitor_Details_Bluetooth.this, "Successfully Checked Out", Toast.LENGTH_SHORT).show();
                         Intent returnIntent = new Intent();
@@ -499,8 +517,32 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
                         finish();
                     } else if (detailsValue.isVisitorsCheckOutFailure()) {
                         detailsValue.setVisitorsCheckOutFailure(false);
+                        checkingoutthread.interrupt();
                         dialog.dismiss();
                         Toast.makeText(Visitor_Details_Bluetooth.this, "CheckOut Failed Please try once again", Toast.LENGTH_SHORT).show();
+                    }
+                    String Message = "";
+                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.ringtone(Visitor_Details_Bluetooth.this);
+                        functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutFailure(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Failed";
+                        functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutDone()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutDone(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Already Done";
+                        functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -986,5 +1028,69 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
             functionCalls.deleteTextfile("Data.txt");
         }
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, Visitor_Details_Bluetooth.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(Visitor_Details_Bluetooth.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(Visitor_Details_Bluetooth.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(Visitor_Details_Bluetooth.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
+    }
+
+    public void checkingout(String result) {
+        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                Organization_ID, CheckingUser);
+        checkOut.execute();
+        dialog = ProgressDialog.show(Visitor_Details_Bluetooth.this, "", "Checking Out...", true);
+        checkingoutthread = null;
+        Runnable runnable = new TestCheckOut();
+        checkingoutthread = new Thread(runnable);
+        checkingoutthread.start();
     }
 }

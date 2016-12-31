@@ -1,6 +1,7 @@
 package in.entrylog.entrylog.main.el201;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -15,10 +16,16 @@ import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
+import android.nfc.Tag;
+import android.nfc.tech.Ndef;
+import android.nfc.tech.NdefFormatable;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputLayout;
@@ -46,10 +53,12 @@ import android.widget.Toast;
 import com.POSD.controllers.PrinterController;
 import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -57,6 +66,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Random;
 
 import in.entrylog.entrylog.R;
@@ -553,6 +563,29 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         details.setMobileNoExist(false);
                         showdialog(MOBILE_DLG);
                         mobilesuggestthread.interrupt();
+                    }
+                    String Message = "";
+                    if (details.isVisitorsCheckOutSuccess()) {
+                        mobilesuggestthread.interrupt();
+                        details.setVisitorsCheckOutSuccess(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.ringtone(AddVisitors_EL201.this);
+                        functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
+                    }
+                    if (details.isVisitorsCheckOutFailure()) {
+                        mobilesuggestthread.interrupt();
+                        details.setVisitorsCheckOutFailure(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Failed";
+                        functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
+                    }
+                    if (details.isVisitorsCheckOutDone()) {
+                        mobilesuggestthread.interrupt();
+                        details.setVisitorsCheckOutDone(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Already Done";
+                        functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -1345,12 +1378,14 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
             Toast.makeText(AddVisitors_EL201.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
             if (writeNFC) {
-                /*Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-                NdefMessage ndefMessage = createNdefMessage(BarCodeValue);
-
-                writeNdefMessage(tag, ndefMessage);*/
-                SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
-                smartCardAdapter.writeSmartTag(AddVisitors_EL201.this, intent, BarCodeValue);
+                writeSmartTag(intent, BarCodeValue);
+            } else {
+                Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+                if (parcelables != null && parcelables.length > 0) {
+                    readTextFromMessage((NdefMessage) parcelables[0]);
+                } else {
+                    Toast.makeText(AddVisitors_EL201.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+                }
             }
         }
     }
@@ -1360,5 +1395,117 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
         IntentFilter[] intentFilters = new IntentFilter[] {};
         nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    private void writeSmartTag(Intent intent, String Data) {
+        Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+        NdefMessage ndefMessage = createNdefMessage(Data);
+
+        writeNdefMessage(tag, ndefMessage);
+    }
+
+    private NdefMessage createNdefMessage(String content) {
+        NdefRecord ndefRecord = createTextRecord(content);
+        NdefMessage ndefMessage = new NdefMessage(new NdefRecord[]{ ndefRecord });
+        return ndefMessage;
+    }
+
+    private void writeNdefMessage(Tag tag, NdefMessage ndefMessage) {
+        try {
+            if (tag == null) {
+                functionCalls.showToast(AddVisitors_EL201.this, "Tag Object cannot be null");
+                return;
+            }
+            Ndef ndef = Ndef.get(tag);
+            if (ndef == null) {
+                formatTag(tag, ndefMessage);
+            } else {
+                ndef.connect();
+                if (!ndef.isWritable()) {
+                    functionCalls.showToast(AddVisitors_EL201.this, "Tag is not writable");
+                    ndef.close();
+                    return;
+                }
+                ndef.writeNdefMessage(ndefMessage);
+                ndef.close();
+                functionCalls.showToast(AddVisitors_EL201.this, "Tag written");
+                finish();
+            }
+        } catch (Exception e) {
+
+        }
+    }
+
+    private NdefRecord createTextRecord(String content) {
+        try {
+            byte[] language;
+            language = Locale.getDefault().getLanguage().getBytes("UTF-8");
+
+            final byte[] text = content.getBytes("UTF-8");
+            final int languageSize = language.length;
+            final int textLength = text.length;
+            final ByteArrayOutputStream payload = new ByteArrayOutputStream(1 + languageSize + textLength);
+
+            payload.write((byte) languageSize & 0x1F);
+            payload.write(language, 0, languageSize);
+            payload.write(text, 0, textLength);
+
+            return new NdefRecord(NdefRecord.TNF_WELL_KNOWN, NdefRecord.RTD_TEXT, new byte[0], payload.toByteArray());
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return null;
+    }
+
+    private void formatTag(Tag tag, NdefMessage ndefMessage) {
+        try {
+            NdefFormatable ndefFormatable = NdefFormatable.get(tag);
+            if (ndefFormatable == null) {
+                functionCalls.showToast(AddVisitors_EL201.this, "This is not ndef formatable");
+                return;
+            }
+
+            ndefFormatable.connect();
+            ndefFormatable.format(ndefMessage);
+            ndefFormatable.close();
+            functionCalls.showToast(AddVisitors_EL201.this, "Tag written");
+        } catch (Exception e) {
+
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(AddVisitors_EL201.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
+    }
+
+    public void checkingout(String result) {
+        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(details, result,
+                Organizationid, GuardID);
+        checkOut.execute();
+        dialog = ProgressDialog.show(AddVisitors_EL201.this, "", "Checking Out...", true);
+        mobilesuggestthread = null;
+        Runnable runnable = new SuggestTimer();
+        mobilesuggestthread = new Thread(runnable);
+        mobilesuggestthread.start();
     }
 }

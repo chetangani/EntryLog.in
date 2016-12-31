@@ -1,15 +1,23 @@
 package in.entrylog.entrylog.main.el201;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AlertDialog;
@@ -70,7 +78,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
             Visitor_VehicleNo, Visitor_EntryGate, Visitor_Photo, ContextView, Visitor_id, Organization_ID, CheckingUser,
             HeaderPath, DataPath, OrganizationPath, OrganizationName, BarCodeValue, CheckinUser="", CheckoutUser="",
             Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
-            Student_Name, ID_Card, Email, VehicleNo, BuildManu;
+            Student_Name, ID_Card, Email, VehicleNo, BuildManu, SecurityID;
     NetworkImageView Visitor_image;
     ImageLoader imageLoader;
     TextView tv_name, tv_mobile, tv_address, tv_tomeet, tv_checkintime, tv_checkouttime, tv_vehicleno, tv_entry, tv_exit,
@@ -90,6 +98,9 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
     FieldsService fieldsService;
     EL201 el201device;
     static ArrayList<String> printingdisplay;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    boolean nfcavailable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +145,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         DataPath = functionCalls.filepath("Textfile") + File.separator + "Data.txt";
 
         OrganizationName = settings.getString("OrganizationName", "");
+        SecurityID = settings.getString("GuardID", "");
 
         Intent intent = getIntent();
         Bundle bnd = intent.getExtras();
@@ -305,6 +317,14 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                 }
             }
         });
+
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+            }
+        }
     }
 
     private void PrintingData() {
@@ -491,6 +511,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                     if (detailsValue.isVisitorsCheckOutSuccess()) {
                         detailsValue.setVisitorsCheckOutSuccess(false);
                         dialog.dismiss();
+                        checkingoutthread.interrupt();
                         Toast.makeText(Visitor_Details_EL201.this, "Successfully Checked Out", Toast.LENGTH_SHORT).show();
                         Intent returnIntent = new Intent();
                         setResult(Activity.RESULT_OK, returnIntent);
@@ -498,7 +519,31 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                     } else if (detailsValue.isVisitorsCheckOutFailure()) {
                         detailsValue.setVisitorsCheckOutFailure(false);
                         dialog.dismiss();
+                        checkingoutthread.interrupt();
                         Toast.makeText(Visitor_Details_EL201.this, "CheckOut Failed Please try once again", Toast.LENGTH_SHORT).show();
+                    }
+                    String Message = "";
+                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.ringtone(Visitor_Details_EL201.this);
+                        createdialog(Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutFailure(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Failed";
+                        createdialog(Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutDone()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setVisitorsCheckOutDone(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Already Done";
+                        createdialog(Message);
                     }
                 } catch (Exception e) {
                 }
@@ -623,6 +668,84 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
             functionCalls.deleteTextfile("Data.txt");
         }
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, Visitor_Details_EL201.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(Visitor_Details_EL201.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(Visitor_Details_EL201.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(Visitor_Details_EL201.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
+    }
+
+    public void checkingout(String result) {
+        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                Organization_ID, SecurityID);
+        checkOut.execute();
+        dialog = ProgressDialog.show(Visitor_Details_EL201.this, "", "Checking Out...", true);
+        checkingoutthread = null;
+        Runnable runnable = new TestCheckOut();
+        checkingoutthread = new Thread(runnable);
+        checkingoutthread.start();
+    }
+
+    private void createdialog(String Message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(Visitor_Details_EL201.this);
+        builder.setTitle("CheckOut Result");
+        builder.setMessage(Message);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog alert1 = builder.create();
+        alert1.show();
     }
 }
 

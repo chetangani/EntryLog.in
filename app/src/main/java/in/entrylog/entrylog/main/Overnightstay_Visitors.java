@@ -1,18 +1,27 @@
 package in.entrylog.entrylog.main;
 
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
+import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.Surface;
+import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import in.entrylog.entrylog.R;
@@ -39,6 +48,9 @@ public class Overnightstay_Visitors extends AppCompatActivity {
     FunctionCalls functionCalls;
     static ProgressDialog dialog = null;
     Thread nightstaythread;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    boolean nfcavailable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +78,14 @@ public class Overnightstay_Visitors extends AppCompatActivity {
         OverNightVisitorsView.setHasFixedSize(true);
         OverNightVisitorsView.setLayoutManager(layoutManager);
         OverNightVisitorsView.setAdapter(OverNightVisitorsadapter);
+
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+            }
+        }
 
         nightstaythread = null;
         Runnable runnable = new VisitorsTimer();
@@ -139,6 +159,29 @@ public class Overnightstay_Visitors extends AppCompatActivity {
                         dialog.dismiss();
                         nightstaythread.interrupt();
                         showdialog(VISITORS_DLG);
+                    }
+                    String Message = "";
+                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                        nightstaythread.interrupt();
+                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.ringtone(Overnightstay_Visitors.this);
+                        functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                        nightstaythread.interrupt();
+                        detailsValue.setVisitorsCheckOutFailure(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Failed";
+                        functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutDone()) {
+                        nightstaythread.interrupt();
+                        detailsValue.setVisitorsCheckOutDone(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Already Done";
+                        functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -223,5 +266,69 @@ public class Overnightstay_Visitors extends AppCompatActivity {
             nightstaythread.interrupt();
         }
         super.onDestroy();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, Overnightstay_Visitors.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(Overnightstay_Visitors.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(Overnightstay_Visitors.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(Overnightstay_Visitors.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
+    }
+
+    public void checkingout(String result) {
+        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                Organization_ID, CheckingUser);
+        checkOut.execute();
+        dialog = ProgressDialog.show(Overnightstay_Visitors.this, "", "Checking Out...", true);
+        nightstaythread = null;
+        Runnable runnable = new VisitorsTimer();
+        nightstaythread = new Thread(runnable);
+        nightstaythread.start();
     }
 }

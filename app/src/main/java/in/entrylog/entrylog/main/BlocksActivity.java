@@ -2,19 +2,26 @@ package in.entrylog.entrylog.main;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -33,6 +40,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -75,6 +83,9 @@ public class BlocksActivity extends AppCompatActivity {
     FunctionCalls functionCalls;
     IMEIFunctionCalls imeiFunctionCalls;
     EL101_102 el101_102device;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    boolean nfcavailable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +145,17 @@ public class BlocksActivity extends AppCompatActivity {
 
         String version = pInfo.versionName;
         tv_app_version.setText("VER: "+version);
+
+        if (settings.getString("RFID", "").equals("true")) {
+            nfcManager = (NfcManager) getSystemService(NFC_SERVICE);
+            nfcAdapter = nfcManager.getDefaultAdapter();
+            if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+                nfcavailable = true;
+            } else {
+                Toast.makeText(BlocksActivity.this, "NFC Enabled but not available in this device",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
 
         tv_app_version.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -574,6 +596,29 @@ public class BlocksActivity extends AppCompatActivity {
                         } catch (ActivityNotFoundException e) {
                         }
                     }
+                    String Message = "";
+                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                        updatethread.interrupt();
+                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.ringtone(BlocksActivity.this);
+                        createdialog(Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                        updatethread.interrupt();
+                        detailsValue.setVisitorsCheckOutFailure(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Failed";
+                        createdialog(Message);
+                    }
+                    if (detailsValue.isVisitorsCheckOutDone()) {
+                        updatethread.interrupt();
+                        detailsValue.setVisitorsCheckOutDone(false);
+                        dialog.dismiss();
+                        Message = "Checked Out Already Done";
+                        createdialog(Message);
+                    }
                 } catch (Exception e) {
                 }
             }
@@ -671,5 +716,83 @@ public class BlocksActivity extends AppCompatActivity {
             dismissDialog(DIALOG_DOWNLOAD_PROGRESS);
             appdownloaded = true;
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, BlocksActivity.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(BlocksActivity.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(BlocksActivity.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            String tagcontent = getTextfromNdefRecord(ndefRecord);
+            checkingout(tagcontent);
+        } else {
+            Toast.makeText(BlocksActivity.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
+    }
+
+    public void checkingout(String result) {
+        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+                OrganizationID, GuardID);
+        checkOut.execute();
+        dialog = ProgressDialog.show(BlocksActivity.this, "", "Checking Out...", true);
+        updatethread = null;
+        Runnable runnable = new Updatetimer();
+        updatethread = new Thread(runnable);
+        updatethread.start();
+    }
+
+    private void createdialog(String Message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(BlocksActivity.this);
+        builder.setTitle("CheckOut Result");
+        builder.setMessage(Message);
+        builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog alert1 = builder.create();
+        alert1.show();
     }
 }

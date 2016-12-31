@@ -4,15 +4,18 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -317,5 +320,20 @@ public class FunctionCalls {
         Intent receiver = new Intent(context, AlarmReceiver.class);
         alarmIntent = PendingIntent.getBroadcast(context, 0, receiver, 0);
         alarmMgr.cancel(alarmIntent);
+    }
+
+    public void smartCardStatus(Context context, String Message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("SmartCard Result");
+        builder.setMessage(Message);
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+        AlertDialog smartalert = builder.create();
+        smartalert.show();
+        ((AlertDialog) smartalert).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLUE);
     }
 }

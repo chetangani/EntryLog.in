@@ -11,6 +11,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.support.v4.app.NotificationCompat;
 
+import java.util.Calendar;
+
 import in.entrylog.entrylog.R;
 
 /**
@@ -19,6 +21,7 @@ import in.entrylog.entrylog.R;
 public class AlarmReceiver extends BroadcastReceiver {
     public static final String PREFS_NAME = "MyPrefsFile";
     SharedPreferences settings;
+    String OverNightTime="", Login="";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -43,8 +46,23 @@ public class AlarmReceiver extends BroadcastReceiver {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         //to post your notification to the notification bar with a id. If a notification with same id already exists, it will get replaced with updated information.
         notificationManager.notify(0, builder.build());*/
-        Intent i=new Intent(context.getApplicationContext(),Overnightstay_Visitors.class);
-        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(i);
+        settings = context.getSharedPreferences(PREFS_NAME, context.MODE_PRIVATE);
+        OverNightTime = settings.getString("OverNightTime", "");
+        try {
+            Login = settings.getString("Login", "");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (Login.equals("Yes")) {
+            if (!OverNightTime.equals("")) {
+                int time = Integer.parseInt(OverNightTime);
+                Calendar cal = Calendar.getInstance();
+                if (time == (cal.get(Calendar.HOUR_OF_DAY))) {
+                    Intent i = new Intent(context.getApplicationContext(),Overnightstay_Visitors.class);
+                    i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(i);
+                }
+            }
+        }
     }
 }
