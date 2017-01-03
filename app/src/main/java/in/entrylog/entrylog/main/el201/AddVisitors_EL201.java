@@ -35,6 +35,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -47,6 +48,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -115,7 +118,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     String Name, Email="", FromAddress, ToMeet, Vehicleno = "", Organizationid, OrganizationName, UpdateVisitorImage="",
             Visitors_ImagefileName = "", GuardID, User, HeaderPath, DataPath, OrganizationPath, DateTime="", BarCodeValue="",
             format, Visitor_Designation="", Department="", Purpose="", House_number="", Flat_number="", Block="", No_Visitor="",
-            aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="", BuildManu="", ID_Card_type="";
+            aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="", BuildManu="", ID_Card_type="", Visitor_type="";
     int codevalue, digits;
     static String Mobile = "";
     ConnectingTask task;
@@ -124,7 +127,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, textfileready = false, imageprinting = false, barcodeprinting = false, reprint = false,
             writeNFC = false, otpcheck = false, manualcheck = false, otpresent = false, nfcavailable = false,
-            mobilesuggestsuccess = false;
+            mobilesuggestsuccess = false, vipvisitor = false, normalvisitor = false;
     View mProgressBar;
     DataBase dataBase;
     NfcAdapter nfcAdapter;
@@ -208,9 +211,6 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             nfcAdapter = nfcManager.getDefaultAdapter();
             if (nfcAdapter != null && nfcAdapter.isEnabled()) {
                 nfcavailable = true;
-                writeNFC = true;
-                Toast.makeText(AddVisitors_EL201.this, "NFC Enabled" +"\n"+ "NFC Available: "+nfcavailable
-                        +"\n"+ "WRITERFID: "+writeNFC, Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -382,11 +382,9 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                                             Flat_number, Block, No_Visitor, aClass, Section, Student_Name, ID_Card,
                                             settings.getString("Device", ""), Visitor_Entry, DateTime, ID_Card_type);
                                 }
-                                if (!settings.getString("UpdateData", "").equals("Running")) {
-                                    Log.d("debug", "Service Started");
-                                    Intent intent = new Intent(AddVisitors_EL201.this, Updatedata.class);
-                                    startService(intent);
-                                }
+                                Log.d("debug", "Service Started");
+                                Intent intent = new Intent(AddVisitors_EL201.this, Updatedata.class);
+                                startService(intent);
                                 if (BuildManu.equals("LS888")) {
                                     PrintingData();
                                 } else {
@@ -917,43 +915,6 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         }
     }
 
-    private String CurrentDate() {
-        Calendar cal = Calendar.getInstance();
-        int curyear = cal.get(Calendar.YEAR);
-        int curmonth = cal.get(Calendar.MONTH);
-        int curdate = cal.get(Calendar.DAY_OF_MONTH);
-        String Currentdate = "" + curdate + "/" + "" + (curmonth + 1) + "/" + curyear;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
-        try {
-            Starttime = new SimpleDateFormat("dd/MM/yyyy").parse(Currentdate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Date = sdf.format(Starttime);
-        return Date;
-    }
-
-    private String CurrentTime() {
-        Calendar cal = Calendar.getInstance();
-        int curhour = cal.get(Calendar.HOUR_OF_DAY);
-        int curminute = cal.get(Calendar.MINUTE);
-        String minute = "" + curminute;
-        if (minute.length() == 1) {
-            minute = "0" + minute;
-        }
-        String Currenttime = "" + curhour + ":" + minute;
-        Date Starttime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
-        try {
-            Starttime = new SimpleDateFormat("HH:mm").parse(Currenttime);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        String Time = sdf.format(Starttime);
-        return Time;
-    }
-
     private void showdialog(int id) {
         switch (id) {
             case START_DLG:
@@ -963,6 +924,21 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 builder.setView(ll);
                 builder.setCancelable(false);
                 etmobile = (EditText) ll.findViewById(R.id.dialogmobile_etTxt);
+                RadioGroup visitorselection = (RadioGroup) ll.findViewById(R.id.rg_visitor_type);
+                final RadioButton rb_normalvisitor = (RadioButton) ll.findViewById(R.id.rb_normal_visitor);
+                final RadioButton rb_vipvisitor = (RadioButton) ll.findViewById(R.id.rb_vip_visitor);
+                if (normalvisitor) {
+                    rb_normalvisitor.setChecked(true);
+                } else if (vipvisitor) {
+                    rb_vipvisitor.setChecked(true);
+                }
+                radiobuttons(rb_vipvisitor, rb_normalvisitor, etmobile);
+                visitorselection.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        radiobuttons(rb_vipvisitor, rb_normalvisitor, etmobile);
+                    }
+                });
 
                 etmobile.addTextChangedListener(new TextWatcher() {
                     @Override
@@ -1026,6 +1002,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (nfcavailable) {
+                            writeNFC = true;
                             showdialog(NFC_DLG);
                         } else {
                             finish();
@@ -1177,6 +1154,23 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 AlertDialog alert2 = otpbuilder.create();
                 alert2.show();
                 break;
+        }
+    }
+
+    private void radiobuttons(RadioButton vip, RadioButton normal, EditText et_mobile) {
+        if (normal.isChecked()) {
+            normalvisitor = true;
+            vipvisitor = false;
+            Visitor_type = "normal";
+            et_mobile.setInputType(InputType.TYPE_CLASS_NUMBER);
+            et_mobile.setSelection(et_mobile.getText().length());
+        }
+        if (vip.isChecked()) {
+            vipvisitor = true;
+            normalvisitor = false;
+            Visitor_type = "vip";
+            et_mobile.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            et_mobile.setSelection(et_mobile.getText().length());
         }
     }
 

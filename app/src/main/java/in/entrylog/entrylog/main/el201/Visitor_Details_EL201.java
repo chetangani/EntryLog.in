@@ -529,21 +529,21 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
                         functionCalls.ringtone(Visitor_Details_EL201.this);
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutFailure()) {
                         checkingoutthread.interrupt();
                         detailsValue.setVisitorsCheckOutFailure(false);
                         dialog.dismiss();
                         Message = "Checked Out Failed";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutDone()) {
                         checkingoutthread.interrupt();
                         detailsValue.setVisitorsCheckOutDone(false);
                         dialog.dismiss();
                         Message = "Checked Out Already Done";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -732,20 +732,6 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
         Runnable runnable = new TestCheckOut();
         checkingoutthread = new Thread(runnable);
         checkingoutthread.start();
-    }
-
-    private void createdialog(String Message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(Visitor_Details_EL201.this);
-        builder.setTitle("CheckOut Result");
-        builder.setMessage(Message);
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        AlertDialog alert1 = builder.create();
-        alert1.show();
     }
 }
 

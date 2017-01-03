@@ -15,12 +15,14 @@ import android.nfc.NfcManager;
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.google.zxing.Result;
 
 import java.io.UnsupportedEncodingException;
 
+import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorsCheckOut;
 import in.entrylog.entrylog.values.DetailsValue;
@@ -45,11 +47,11 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
-        setContentView(mScannerView);
+        setContentView(R.layout.activity_checkout_visitors);
 
-        mScannerView.setResultHandler(this); // Register ourselves as a handler for scan results.
-        mScannerView.startCamera();
+        ViewGroup contentFrame = (ViewGroup) findViewById(R.id.content_frame);
+        mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
+        contentFrame.addView(mScannerView);
 
         settings = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         if (settings.getString("RFID", "").equals("true")) {
@@ -57,9 +59,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
             nfcAdapter = nfcManager.getDefaultAdapter();
             if (nfcAdapter != null && nfcAdapter.isEnabled()) {
                 nfcavailable = true;
-            } else {
-                Toast.makeText(CheckoutVisitors.this, "NFC Enabled but not available in this device",
-                        Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -80,6 +79,8 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
     @Override
     protected void onResume() {
         super.onResume();
+        mScannerView.setResultHandler(this);   // Register ourselves as a handler for scan results.
+        mScannerView.startCamera();
         if (nfcavailable) {
             enableForegroundDispatchSystem();
         }
@@ -94,8 +95,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
 
     @Override
     public void handleResult(Result result) {
-        // show the scanner result into dialog box.
-
         checkingout(result.getText().toString());
     }
 
@@ -110,8 +109,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
             } else {
                 Toast.makeText(CheckoutVisitors.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
             }
-            /*SmartCardAdapter smartCardAdapter = new SmartCardAdapter();
-            smartCardAdapter.readSmartTag(CheckoutVisitors.this, intent);*/
         }
     }
 
@@ -193,16 +190,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         });
     }
 
-    private void reload() {
-        Intent intent = getIntent();
-        overridePendingTransition(0, 0);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        finish();
-
-        overridePendingTransition(0, 0);
-        startActivity(intent);
-    }
-
     private void createdialog(String Message, String Checkout) {
         AlertDialog.Builder builder = new AlertDialog.Builder(CheckoutVisitors.this);
         builder.setTitle("CheckOut Result");
@@ -218,7 +205,7 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
             builder.setNeutralButton("ReScan", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    reload();
+                    mScannerView.resumeCameraPreview(CheckoutVisitors.this);
                 }
             });
         } else {
@@ -229,32 +216,6 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
                 }
             });
         }
-        AlertDialog alert1 = builder.create();
-        alert1.show();
-    }
-
-    private void showdialog(final String result) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Scan Result");
-        builder.setMessage(result);
-        builder.setPositiveButton("CHECK OUT", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
-                        OrganizationID, SecurityID);
-                checkOut.execute();
-                checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
-                mythread = null;
-                Runnable runnable = new DisplayTimer();
-                mythread = new Thread(runnable);
-                mythread.start();
-            }
-        }).setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                finish();
-            }
-        });
         AlertDialog alert1 = builder.create();
         alert1.show();
     }

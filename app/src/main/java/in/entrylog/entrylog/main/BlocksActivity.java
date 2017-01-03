@@ -151,9 +151,6 @@ public class BlocksActivity extends AppCompatActivity {
             nfcAdapter = nfcManager.getDefaultAdapter();
             if (nfcAdapter != null && nfcAdapter.isEnabled()) {
                 nfcavailable = true;
-            } else {
-                Toast.makeText(BlocksActivity.this, "NFC Enabled but not available in this device",
-                        Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -603,21 +600,21 @@ public class BlocksActivity extends AppCompatActivity {
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
                         functionCalls.ringtone(BlocksActivity.this);
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutFailure()) {
                         updatethread.interrupt();
                         detailsValue.setVisitorsCheckOutFailure(false);
                         dialog.dismiss();
                         Message = "Checked Out Failed";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutDone()) {
                         updatethread.interrupt();
                         detailsValue.setVisitorsCheckOutDone(false);
                         dialog.dismiss();
                         Message = "Checked Out Already Done";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -780,19 +777,5 @@ public class BlocksActivity extends AppCompatActivity {
         Runnable runnable = new Updatetimer();
         updatethread = new Thread(runnable);
         updatethread.start();
-    }
-
-    private void createdialog(String Message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(BlocksActivity.this);
-        builder.setTitle("CheckOut Result");
-        builder.setMessage(Message);
-        builder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        AlertDialog alert1 = builder.create();
-        alert1.show();
     }
 }

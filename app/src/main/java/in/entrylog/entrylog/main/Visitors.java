@@ -640,21 +640,21 @@ public class Visitors extends AppCompatActivity implements OnClickListener {
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
                         functionCalls.ringtone(Visitors.this);
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitors.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutFailure()) {
                         visitorsthread.interrupt();
                         detailsValue.setVisitorsCheckOutFailure(false);
                         dialog.dismiss();
                         Message = "Checked Out Failed";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitors.this, Message);
                     }
                     if (detailsValue.isVisitorsCheckOutDone()) {
                         visitorsthread.interrupt();
                         detailsValue.setVisitorsCheckOutDone(false);
                         dialog.dismiss();
                         Message = "Checked Out Already Done";
-                        createdialog(Message);
+                        functionCalls.smartCardStatus(Visitors.this, Message);
                     }
                 } catch (Exception e) {
                 }
@@ -813,19 +813,5 @@ public class Visitors extends AppCompatActivity implements OnClickListener {
         Runnable runnable = new VisitorsTimer();
         visitorsthread = new Thread(runnable);
         visitorsthread.start();
-    }
-
-    private void createdialog(String Message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(Visitors.this);
-        builder.setTitle("CheckOut Result");
-        builder.setMessage(Message);
-        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-            }
-        });
-        AlertDialog alert1 = builder.create();
-        alert1.show();
     }
 }

@@ -376,11 +376,11 @@ public class Visitor_Details_EL101 extends AppCompatActivity {
                 Log.d("debug", "Printing Header");
                 if (barcodeprinting) {
                     barcodeprinting = false;
-                    el101_102device.printString("    "+"\n");
                 }
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
+                el101_102device.printString("    "+"\n");
                 el101_102device.SaveData(printdetails, Visitor_Name, Visitor_Mobile, Visitor_Fromaddress, Visitor_ToMeet,
                         Visitor_CheckinTime, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block,
                         No_Visitor, aClass, Section, Student_Name, ID_Card, CheckinUser, Email, Vehicleno, reprint);

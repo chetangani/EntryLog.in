@@ -27,6 +27,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -39,6 +40,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -94,7 +97,7 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     String Name, Email="", FromAddress, ToMeet, Vehicleno = "", Organizationid, OrganizationName, UpdateVisitorImage="",
             Visitors_ImagefileName = "", GuardID, User, HeaderPath, DataPath, OrganizationPath, EmptyPath, DateTime="",
             BarCodeValue="", format, Visitor_Designation="", Department="", Purpose="", House_number="", Flat_number="",
-            Block="", No_Visitor="", aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="", ID_Card_type="";
+            Block="", No_Visitor="", aClass="", Section="", Student_Name="", ID_Card="", Visitor_Entry="", ID_Card_type="", Visitor_type="";
     int codevalue, digits;
     static String Mobile = "";
     ConnectingTask task;
@@ -103,7 +106,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
     Thread mobilesuggestthread;
     static ProgressDialog dialog = null;
     boolean Visitorsimage = false, barcodeprinting = false, reprint = false, writeNFC = false, otpcheck = false,
-            manualcheck = false, otpresent = false, mobilesuggestsuccess = false, nfcavailable = false;
+            manualcheck = false, otpresent = false, mobilesuggestsuccess = false, nfcavailable = false,
+            vipvisitor = false, normalvisitor = false;
     View mProgressBar;
     DataBase dataBase;
     SharedPreferences settings;
@@ -332,11 +336,9 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                                             settings.getString("Device", ""), Visitor_Entry, DateTime, ID_Card_type);
                                 }
                                 functionCalls.LogStatus("Update Data Service: "+settings.getString("UpdateData", ""));
-                                if (!settings.getString("UpdateData", "").equals("Running")) {
-                                    Log.d("debug", "Service Started");
-                                    Intent intent = new Intent(AddVisitors_EL101.this, Updatedata.class);
-                                    startService(intent);
-                                }
+                                Log.d("debug", "Service Started");
+                                Intent intent = new Intent(AddVisitors_EL101.this, Updatedata.class);
+                                startService(intent);
                                 PrintingData();
                             } else {
                                 Toast.makeText(AddVisitors_EL101.this, "Please take a Photo of Visitor", Toast.LENGTH_SHORT).show();
@@ -405,10 +407,10 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 Log.d("debug", "Printing Header");
                 if (barcodeprinting) {
                     barcodeprinting = false;
-                    el101_102device.printString("   "+"\n");
                 }
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
                 el101_102device.SendCommad(new byte[]{0x1b, 0x61, 0x00});
+                el101_102device.printString("   "+"\n");
                 el101_102device.SaveData(printdetails, Name, Mobile, FromAddress, ToMeet, functionCalls.Convertdate(DateTime),
                         Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
                         Student_Name, ID_Card, User, Email, Vehicleno, reprint);
@@ -768,6 +770,21 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 builder.setView(ll);
                 builder.setCancelable(false);
                 etmobile = (EditText) ll.findViewById(R.id.dialogmobile_etTxt);
+                RadioGroup visitorselection = (RadioGroup) ll.findViewById(R.id.rg_visitor_type);
+                final RadioButton rb_normalvisitor = (RadioButton) ll.findViewById(R.id.rb_normal_visitor);
+                final RadioButton rb_vipvisitor = (RadioButton) ll.findViewById(R.id.rb_vip_visitor);
+                if (normalvisitor) {
+                    rb_normalvisitor.setChecked(true);
+                } else if (vipvisitor) {
+                    rb_vipvisitor.setChecked(true);
+                }
+                radiobuttons(rb_vipvisitor, rb_normalvisitor, etmobile);
+                visitorselection.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(RadioGroup group, int checkedId) {
+                        radiobuttons(rb_vipvisitor, rb_normalvisitor, etmobile);
+                    }
+                });
 
                 etmobile.addTextChangedListener(new TextWatcher() {
                     @Override
@@ -982,6 +999,23 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                     ((AlertDialog) alert2).getButton(AlertDialog.BUTTON_NEUTRAL).setEnabled(false);
                 }*/
                 break;
+        }
+    }
+
+    private void radiobuttons(RadioButton vip, RadioButton normal, EditText et_mobile) {
+        if (normal.isChecked()) {
+            normalvisitor = true;
+            vipvisitor = false;
+            Visitor_type = "normal";
+            et_mobile.setInputType(InputType.TYPE_CLASS_NUMBER);
+            et_mobile.setSelection(et_mobile.getText().length());
+        }
+        if (vip.isChecked()) {
+            vipvisitor = true;
+            normalvisitor = false;
+            Visitor_type = "vip";
+            et_mobile.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+            et_mobile.setSelection(et_mobile.getText().length());
         }
     }
 

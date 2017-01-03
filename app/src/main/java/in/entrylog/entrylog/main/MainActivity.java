@@ -2,16 +2,24 @@ package in.entrylog.entrylog.main;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.devkit.api.Misc;
+import android.graphics.Color;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -27,6 +35,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.UnsupportedEncodingException;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
@@ -46,6 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int EXISTS_DLG = 3;
     private static final int BLOCKED_DLG = 4;
     private static final int RequestPermissionCode = 5;
+    private static final int SMARTCARD_DLG = 6;
     Button btn_login;
     EditText orgid_etTxt, user_etTxt, pass_etTxt;
     TextView tv_version;
@@ -61,6 +72,9 @@ public class MainActivity extends AppCompatActivity {
     Context context = MainActivity.this;
     static ProgressDialog dialog = null;
     FunctionCalls functionCalls;
+    NfcAdapter nfcAdapter;
+    NfcManager nfcManager;
+    boolean nfcavailable = false;
 
     public Context getContext() {
         return context;
@@ -103,6 +117,13 @@ public class MainActivity extends AppCompatActivity {
         String version = pInfo.versionName;
         tv_version.setText("VER: "+version);
 
+        nfcManager = (NfcManager) getSystemService(NFC_SERVICE);
+        nfcAdapter = nfcManager.getDefaultAdapter();
+        if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+            nfcavailable = true;
+        } else {
+            nfcavailable = false;
+        }
 
         try {
             Login = settings.getString("Login", "");
@@ -122,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 checkPermissionsMandAbove();
             }
-        }, 5000);
+        }, 2000);
 
         if (loginsuccess) {
             Intent login = new Intent(MainActivity.this, BlocksActivity.class);
@@ -413,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
                 failurebuilder.setTitle("Login Details");
                 failurebuilder.setCancelable(false);
                 failurebuilder.setMessage("Please Check Organization ID and Username and Password are not matching");
-                failurebuilder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                failurebuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         orgid_etTxt.requestFocus();
@@ -428,8 +449,8 @@ public class MainActivity extends AppCompatActivity {
                 existbuilder.setTitle("Login Details");
                 existbuilder.setCancelable(false);
                 existbuilder.setMessage("User already logged in some other device.. " +
-                        "So please logout in that device and proceed");
-                existbuilder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                        "So please logout from that device and proceed");
+                existbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         user_etTxt.setText("");
@@ -448,7 +469,7 @@ public class MainActivity extends AppCompatActivity {
                 blockbuilder.setCancelable(false);
                 blockbuilder.setMessage("Your account has been Blocked. Please contact " +
                         "support@ecotreesolutions.com or Call 8095312121");
-                blockbuilder.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                blockbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         user_etTxt.setText("");
@@ -459,6 +480,20 @@ public class MainActivity extends AppCompatActivity {
                 });
                 AlertDialog blockalert = blockbuilder.create();
                 blockalert.show();
+                break;
+
+            case SMARTCARD_DLG:
+                AlertDialog.Builder smartbuilder = new AlertDialog.Builder(this);
+                smartbuilder.setTitle("Smart Card Result");
+                smartbuilder.setMessage("Please login to the application to CheckIn or CheckOut the Visitor");
+                smartbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                AlertDialog smartalert = smartbuilder.create();
+                smartalert.show();
+                ((AlertDialog) smartalert).getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.BLUE);
                 break;
         }
     }
@@ -500,5 +535,59 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (nfcavailable) {
+            enableForegroundDispatchSystem();
+        }
+    }
+
+    private void enableForegroundDispatchSystem() {
+        Intent intent = new Intent(this, MainActivity.class).addFlags(Intent.FLAG_RECEIVER_REPLACE_PENDING);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        IntentFilter[] intentFilters = new IntentFilter[] {};
+        nfcAdapter.enableForegroundDispatch(this, pendingIntent, intentFilters, null);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra(NfcAdapter.EXTRA_TAG)) {
+            Toast.makeText(MainActivity.this, "Smart Card Intent", Toast.LENGTH_SHORT).show();
+            Parcelable[] parcelables = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (parcelables != null && parcelables.length > 0) {
+                readTextFromMessage((NdefMessage) parcelables[0]);
+            } else {
+                Toast.makeText(MainActivity.this, "No Ndef Message Found", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void readTextFromMessage(NdefMessage ndefMessage) {
+        NdefRecord[] ndefRecords = ndefMessage.getRecords();
+        if (ndefRecords != null && ndefRecords.length > 0) {
+            NdefRecord ndefRecord = ndefRecords[0];
+            getTextfromNdefRecord(ndefRecord);
+            functionCalls.ringtone(MainActivity.this);
+            showdialog(SMARTCARD_DLG);
+        } else {
+            Toast.makeText(MainActivity.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public String getTextfromNdefRecord(NdefRecord ndefRecord) {
+        String tagContent = null;
+        try {
+            byte[] payload = ndefRecord.getPayload();
+            String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
+            int languageSize = payload[0] & 0063;
+            tagContent = new String(payload, languageSize + 1, payload.length - languageSize - 1, textEncoding);
+        } catch (UnsupportedEncodingException e) {
+
+        }
+        return tagContent;
     }
 }
