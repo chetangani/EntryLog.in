@@ -665,4 +665,33 @@ public class ConnectingTask {
             receivingData.TimeStatus(result, details);
         }
     }
+
+    public class SmartCheckinout extends AsyncTask<String, String, String> {
+        DetailsValue detailsValue;
+        String SmartID, Organization_ID, Security_ID, result="";
+
+        public SmartCheckinout(DetailsValue detailsValue, String smartID, String organization_ID, String security_ID) {
+            this.detailsValue = detailsValue;
+            SmartID = smartID;
+            Organization_ID = organization_ID;
+            Security_ID = security_ID;
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                result = sendingData.SmartCheckInOut(SmartID, Organization_ID, Security_ID);
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            receivingData.SmartCheckInOutStatus(result, detailsValue);
+        }
+    }
 }

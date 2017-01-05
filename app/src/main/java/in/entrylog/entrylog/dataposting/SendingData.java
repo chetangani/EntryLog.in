@@ -374,4 +374,18 @@ public class SendingData {
         functionCalls.LogStatus("URL Get Connection Response: "+response);
         return response;
     }
+
+    public String SmartCheckInOut (String SmartID, String Organization_id, String Security_id) {
+        String response = "";
+        HashMap<String, String> datamap = new HashMap<>();
+        datamap.put("rfid_number", SmartID);
+        datamap.put("organization_id", Organization_id);
+        datamap.put("security_guards_id", Security_id);
+        try {
+            response = UrlPostConnection("Rfid_status", datamap);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
 }

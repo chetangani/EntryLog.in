@@ -5,24 +5,21 @@ import android.bluetooth.BluetoothSocket;
 
 import java.util.ArrayList;
 
-/**
- * Created by Admin on 06-Jun-16.
- */
 public class DetailsValue {
-    boolean LoginSuccess, LoginFailure, Fieldsexists, NoFieldsExists, VisitorCheckedIn, VisitorCheckInError, VisitorsCheckOutSuccess,
+    private boolean LoginSuccess, LoginFailure, Fieldsexists, NoFieldsExists, VisitorCheckedIn, VisitorCheckInError, VisitorsCheckOutSuccess,
             VisitorsCheckOutFailure, VisitorImageUpload, MobileAutoSuggestSuccess, MobileAutoSuggestFailure, MobileNoExist, LoginExist,
             VisitorsCheckOutDone, NoVisitorsFound, VisitorsFound, StaffExists, NoStaffExist, PrinterOrderSuccess, PrinterOrderNoData,
-            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist, GotTime, NoTime;
-    String GuardID, OrganizationID, OrganizationName, Fields, ImageFileName, VisitorsId, OverNightStay_Time;
-    int DisplayFields;
-    String Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_Address, Visitors_tomeet, Visitors_VehicleNo, Visitors_Photo,
+            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist, GotTime, NoTime, SmartIn, SmartOut, SmartError;
+    private String GuardID, OrganizationID, OrganizationName, Fields, ImageFileName, VisitorsId, OverNightStay_Time;
+    private int DisplayFields;
+    private String Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_Address, Visitors_tomeet, Visitors_VehicleNo, Visitors_Photo,
             Visitors_CheckInTime, Visitors_CheckInBy, Visitor_ID, Visitors_CheckOutTime, Visitors_BarCode, Check_in_User,
             Check_out_User, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, OTPAccess, ImageAccess, Printertype, Scannertype, RfidStatus, DeviceModel, Cameratype, Apkfile,
             ApkdownloadUrl, ServerTime, ID_Card_Type;
-    BluetoothSocket Socket;
-    BluetoothDevice device;
-    static ArrayList<String> arrayFields;
+    private BluetoothSocket Socket;
+    private BluetoothDevice device;
+    private static ArrayList<String> arrayFields;
 
     public DetailsValue() {
     }
@@ -634,5 +631,29 @@ public class DetailsValue {
 
     public void setID_Card_Type(String ID_Card_Type) {
         this.ID_Card_Type = ID_Card_Type;
+    }
+
+    public boolean isSmartIn() {
+        return SmartIn;
+    }
+
+    public void setSmartIn(boolean smartIn) {
+        SmartIn = smartIn;
+    }
+
+    public boolean isSmartOut() {
+        return SmartOut;
+    }
+
+    public void setSmartOut(boolean smartOut) {
+        SmartOut = smartOut;
+    }
+
+    public boolean isSmartError() {
+        return SmartError;
+    }
+
+    public void setSmartError(boolean smartError) {
+        SmartError = smartError;
     }
 }

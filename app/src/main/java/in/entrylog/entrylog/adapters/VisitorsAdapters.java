@@ -29,6 +29,9 @@ import in.entrylog.entrylog.values.FunctionCalls;
 /**
  * Created by Admin on 14-Jun-16.
  */
+
+
+
 public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.VisitorsViewHolder> {
 
     private static final int REQUEST_FOR_ACTIVITY_CODE = 1;

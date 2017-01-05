@@ -48,6 +48,7 @@ import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.LogoutUser;
 import in.entrylog.entrylog.dataposting.ConnectingTask.CheckUpdatedApk;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.main.bluetooth.AddVisitor_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.AddVisitors_EL101;
 import in.entrylog.entrylog.main.el201.AddVisitors_EL201;
@@ -594,26 +595,26 @@ public class BlocksActivity extends AppCompatActivity {
                         }
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         updatethread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
                         dialog.dismiss();
-                        Message = "Successfully Checked Out";
+                        Message = "Successfully Checked In";
                         functionCalls.ringtone(BlocksActivity.this);
                         functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartOut()) {
                         updatethread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
+                        Message = "Successfully Checked Out";
                         functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
+                    if (detailsValue.isSmartError()) {
                         updatethread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
                 } catch (Exception e) {
@@ -769,10 +770,10 @@ public class BlocksActivity extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result,
                 OrganizationID, GuardID);
         checkOut.execute();
-        dialog = ProgressDialog.show(BlocksActivity.this, "", "Checking Out...", true);
+        dialog = ProgressDialog.show(BlocksActivity.this, "", "Checking...", true);
         updatethread = null;
         Runnable runnable = new Updatetimer();
         updatethread = new Thread(runnable);

@@ -615,4 +615,22 @@ public class ReceivingData {
             e.printStackTrace();
         }
     }
+
+    public void SmartCheckInOutStatus(String result, DetailsValue details) {
+        try {
+            JSONObject jo = new JSONObject(result);
+            if (jo != null) {
+                String Status = jo.getString("message");
+                if (Status.equals("Checked In")) {
+                    details.setSmartIn(true);
+                } else if (Status.equals("Checked Out")){
+                    details.setSmartOut(true);
+                } else {
+                    details.setSmartError(true);
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }
