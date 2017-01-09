@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.adapters.VisitorsAdapters;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.OvernightStay_Visitors;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
@@ -161,26 +162,25 @@ public class Overnightstay_Visitors extends AppCompatActivity {
                         showdialog(VISITORS_DLG);
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         nightstaythread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        nightstaythread.interrupt();
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(Overnightstay_Visitors.this);
                         functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartError()) {
                         nightstaythread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
-                    }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
-                        nightstaythread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(Overnightstay_Visitors.this, Message);
                     }
                 } catch (Exception e) {
@@ -322,8 +322,7 @@ public class Overnightstay_Visitors extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
-                Organization_ID, CheckingUser);
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result, Organization_ID, CheckingUser);
         checkOut.execute();
         dialog = ProgressDialog.show(Overnightstay_Visitors.this, "", "Checking Out...", true);
         nightstaythread = null;

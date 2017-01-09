@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -19,12 +18,11 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -46,8 +44,8 @@ import java.net.URLConnection;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
-import in.entrylog.entrylog.dataposting.ConnectingTask.LogoutUser;
 import in.entrylog.entrylog.dataposting.ConnectingTask.CheckUpdatedApk;
+import in.entrylog.entrylog.dataposting.ConnectingTask.LogoutUser;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.main.bluetooth.AddVisitor_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.AddVisitors_EL101;
@@ -600,7 +598,6 @@ public class BlocksActivity extends AppCompatActivity {
                         detailsValue.setSmartIn(false);
                         dialog.dismiss();
                         Message = "Successfully Checked In";
-                        functionCalls.ringtone(BlocksActivity.this);
                         functionCalls.smartCardStatus(BlocksActivity.this, Message);
                     }
                     if (detailsValue.isSmartOut()) {

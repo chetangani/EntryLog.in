@@ -233,8 +233,6 @@ public class AddVisitors_EL101 extends AppCompatActivity {
             codevalue = 1;
             String value = String.format(format, codevalue);
             BarCodeValue = value + Organizationid;
-            editor.putString("BarCode", BarCodeValue);
-            editor.commit();
         } else {
             String code = settings.getString("BarCode", "");
             String barvalue = code.substring(0, 4);
@@ -243,14 +241,10 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 codevalue = 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             } else {
                 codevalue = codevalue + 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             }
         }
 
@@ -847,6 +841,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 endbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        editor.putString("BarCode", BarCodeValue);
+                        editor.commit();
                         if (nfcavailable) {
                             writeNFC = true;
                             showdialog(NFC_DLG);
@@ -917,6 +913,8 @@ public class AddVisitors_EL101 extends AppCompatActivity {
                 TextInputLayout tilotp = (TextInputLayout) otpll.findViewById(R.id.otp_Til);
                 tilotp.setVisibility(View.VISIBLE);
                 final EditText otpetTxt = (EditText) otpll.findViewById(R.id.dialogotp_etTxt);
+                RadioGroup otpselection = (RadioGroup) otpll.findViewById(R.id.rg_visitor_type);
+                otpselection.setVisibility(View.GONE);
 
                 otpbuilder.setPositiveButton("CONFIRM", new DialogInterface.OnClickListener() {
                     @Override

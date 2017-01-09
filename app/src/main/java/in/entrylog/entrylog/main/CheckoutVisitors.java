@@ -12,9 +12,9 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -24,10 +24,10 @@ import java.io.UnsupportedEncodingException;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorsCheckOut;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
-import in.entrylog.entrylog.values.SmartCardAdapter;
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerView.ResultHandler {
@@ -117,8 +117,7 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
         if (ndefRecords != null && ndefRecords.length > 0) {
             NdefRecord ndefRecord = ndefRecords[0];
             String tagcontent = getTextfromNdefRecord(ndefRecord);
-            /*showdialog(tagcontent);*/
-            checkingout(tagcontent);
+            smartcheckingout(tagcontent);
         } else {
             Toast.makeText(CheckoutVisitors.this, "No Ndef Records Found", Toast.LENGTH_SHORT).show();
         }
@@ -184,6 +183,27 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
                         out = "Done";
                         createdialog(Message, out);
                     }
+                    if (detailsValue.isSmartIn()) {
+                        mythread.interrupt();
+                        detailsValue.setSmartIn(false);
+                        checkoutdialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(CheckoutVisitors.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        mythread.interrupt();
+                        detailsValue.setSmartOut(false);
+                        checkoutdialog.dismiss();
+                        Message = "Successfully Checked Out";
+                        functionCalls.smartCardStatus(CheckoutVisitors.this, Message);
+                    }
+                    if (detailsValue.isSmartError()) {
+                        mythread.interrupt();
+                        detailsValue.setSmartError(false);
+                        checkoutdialog.dismiss();
+                        Message = "Checking Error.. Please swipe again..";
+                        functionCalls.smartCardStatus(CheckoutVisitors.this, Message);
+                    }
                 } catch (Exception e) {
                 }
             }
@@ -225,6 +245,17 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
                 OrganizationID, SecurityID);
         checkOut.execute();
         checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking Out...", true);
+        mythread = null;
+        Runnable runnable = new DisplayTimer();
+        mythread = new Thread(runnable);
+        mythread.start();
+    }
+
+    public void smartcheckingout(String result) {
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result,
+                OrganizationID, SecurityID);
+        checkOut.execute();
+        checkoutdialog = ProgressDialog.show(CheckoutVisitors.this, "", "Checking...", true);
         mythread = null;
         Runnable runnable = new DisplayTimer();
         mythread = new Thread(runnable);

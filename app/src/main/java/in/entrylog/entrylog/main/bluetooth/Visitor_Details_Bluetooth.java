@@ -18,6 +18,7 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Parcelable;
@@ -25,7 +26,6 @@ import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
@@ -37,7 +37,6 @@ import android.widget.Toast;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
-import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,6 +55,7 @@ import java.util.Set;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
 import in.entrylog.entrylog.main.CustomVolleyRequest;
 import in.entrylog.entrylog.main.services.FieldsService;
@@ -522,26 +522,25 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
                         Toast.makeText(Visitor_Details_Bluetooth.this, "CheckOut Failed Please try once again", Toast.LENGTH_SHORT).show();
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(Visitor_Details_Bluetooth.this);
                         functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartError()) {
                         checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
-                    }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
-                        checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(Visitor_Details_Bluetooth.this, Message);
                     }
                 } catch (Exception e) {
@@ -1084,7 +1083,7 @@ public class Visitor_Details_Bluetooth extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result,
                 Organization_ID, CheckingUser);
         checkOut.execute();
         dialog = ProgressDialog.show(Visitor_Details_Bluetooth.this, "", "Checking Out...", true);

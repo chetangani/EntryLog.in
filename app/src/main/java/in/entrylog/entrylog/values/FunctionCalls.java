@@ -154,7 +154,6 @@ public class FunctionCalls {
         } catch (final ParseException e) {
             e.printStackTrace();
         }
-        Log.d("debug", "Time Result: "+result);
         /*if (result.length() > 22) {
             String d1 = result.substring(result.length()-4, result.length());
             String d2 = result.substring(0, result.length()-4);
@@ -323,6 +322,7 @@ public class FunctionCalls {
     }
 
     public void smartCardStatus(Context context, String Message) {
+        ringtone(context);
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("SmartCard Result");
         builder.setMessage(Message);

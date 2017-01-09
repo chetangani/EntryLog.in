@@ -5,7 +5,6 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -15,17 +14,15 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Surface;
@@ -45,13 +42,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.adapters.VisitorsAdapters;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
-import in.entrylog.entrylog.dataposting.ConnectingTask.CheckVisitors;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.AllVisitors;
+import in.entrylog.entrylog.dataposting.ConnectingTask.CheckVisitors;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
 
@@ -634,26 +631,25 @@ public class Visitors extends AppCompatActivity implements OnClickListener {
                         showdialog(VISITORS_DLG);
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(Visitors.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        visitorsthread.interrupt();
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(Visitors.this);
                         functionCalls.smartCardStatus(Visitors.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartError()) {
                         visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(Visitors.this, Message);
-                    }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
-                        visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(Visitors.this, Message);
                     }
                 } catch (Exception e) {
@@ -805,8 +801,7 @@ public class Visitors extends AppCompatActivity implements OnClickListener {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
-                Organization_ID, CheckingUser);
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result, Organization_ID, CheckingUser);
         checkOut.execute();
         dialog = ProgressDialog.show(Visitors.this, "", "Checking Out...", true);
         visitorsthread = null;

@@ -95,6 +95,7 @@ public class SendingData {
         datamap.put("organization_id", ImagefileName);
         datamap.put("security_guards_id", Security_ID);
         datamap.put("visitors_bar_code", Organization_ID);
+        functionCalls.LogStatus("BarCode: "+Organization_ID);
         datamap.put("visitor_designation", visitor_Designation);
         datamap.put("department", department);
         datamap.put("purpose", purpose);
@@ -379,10 +380,11 @@ public class SendingData {
         String response = "";
         HashMap<String, String> datamap = new HashMap<>();
         datamap.put("rfid_number", SmartID);
+        functionCalls.LogStatus("SmartID: "+SmartID);
         datamap.put("organization_id", Organization_id);
         datamap.put("security_guards_id", Security_id);
         try {
-            response = UrlPostConnection("Rfid_status", datamap);
+            response = UrlPostConnection("Rfid_status1", datamap);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -3,7 +3,6 @@ package in.entrylog.entrylog.main.el201;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,31 +15,24 @@ import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.POSD.controllers.PrinterController;
-import com.POSD.util.MachineVersion;
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,11 +41,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Scanner;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
 import in.entrylog.entrylog.main.CustomVolleyRequest;
 import in.entrylog.entrylog.main.services.FieldsService;
@@ -523,26 +514,25 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
                         Toast.makeText(Visitor_Details_EL201.this, "CheckOut Failed Please try once again", Toast.LENGTH_SHORT).show();
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        checkingoutthread.interrupt();
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(Visitor_Details_EL201.this);
                         functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartError()) {
                         checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
-                    }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
-                        checkingoutthread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(Visitor_Details_EL201.this, Message);
                     }
                 } catch (Exception e) {
@@ -724,7 +714,7 @@ public class Visitor_Details_EL201 extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result,
                 Organization_ID, SecurityID);
         checkOut.execute();
         dialog = ProgressDialog.show(Visitor_Details_EL201.this, "", "Checking Out...", true);

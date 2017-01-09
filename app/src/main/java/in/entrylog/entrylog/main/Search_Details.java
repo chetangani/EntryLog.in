@@ -1,8 +1,6 @@
 package in.entrylog.entrylog.main;
 
 import android.app.Activity;
-import android.app.DatePickerDialog;
-import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
@@ -14,11 +12,10 @@ import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
 import android.nfc.NfcManager;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.Surface;
@@ -33,8 +30,8 @@ import java.util.ArrayList;
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.adapters.VisitorsAdapters;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SearchVisitors;
-import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorsCheckOut;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
 
@@ -192,26 +189,25 @@ public class Search_Details extends AppCompatActivity {
                         showdialog(VISITORS_DLG);
                     }
                     String Message = "";
-                    if (detailsValue.isVisitorsCheckOutSuccess()) {
+                    if (detailsValue.isSmartIn()) {
                         visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutSuccess(false);
+                        detailsValue.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(Search_Details.this, Message);
+                    }
+                    if (detailsValue.isSmartOut()) {
+                        visitorsthread.interrupt();
+                        detailsValue.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(Search_Details.this);
                         functionCalls.smartCardStatus(Search_Details.this, Message);
                     }
-                    if (detailsValue.isVisitorsCheckOutFailure()) {
+                    if (detailsValue.isSmartError()) {
                         visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutFailure(false);
+                        detailsValue.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(Search_Details.this, Message);
-                    }
-                    if (detailsValue.isVisitorsCheckOutDone()) {
-                        visitorsthread.interrupt();
-                        detailsValue.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(Search_Details.this, Message);
                     }
                 } catch (Exception e) {
@@ -407,7 +403,7 @@ public class Search_Details extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        VisitorsCheckOut checkOut = task.new VisitorsCheckOut(detailsValue, result,
+        SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result,
                 Organization_ID, CheckingUser);
         checkOut.execute();
         dialog = ProgressDialog.show(Search_Details.this, "", "Checking Out...", true);

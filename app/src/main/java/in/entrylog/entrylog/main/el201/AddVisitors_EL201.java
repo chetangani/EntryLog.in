@@ -1,7 +1,6 @@
 package in.entrylog.entrylog.main.el201;
 
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -24,6 +23,7 @@ import android.nfc.Tag;
 import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.provider.MediaStore;
@@ -33,7 +33,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
@@ -62,12 +61,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Random;
@@ -77,6 +72,7 @@ import in.entrylog.entrylog.database.DataBase;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.MobileAutoSuggest;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SMSOTP;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
@@ -88,7 +84,6 @@ import in.entrylog.entrylog.values.DataPrinting;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.EL201;
 import in.entrylog.entrylog.values.FunctionCalls;
-import in.entrylog.entrylog.values.SmartCardAdapter;
 
 import static android.Manifest.permission.CAMERA;
 
@@ -261,8 +256,6 @@ public class AddVisitors_EL201 extends AppCompatActivity {
             codevalue = 1;
             String value = String.format(format, codevalue);
             BarCodeValue = value + Organizationid;
-            editor.putString("BarCode", BarCodeValue);
-            editor.commit();
         } else {
             String code = settings.getString("BarCode", "");
             String barvalue = code.substring(0, 4);
@@ -271,16 +264,14 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 codevalue = 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             } else {
                 codevalue = codevalue + 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             }
         }
+
+        functionCalls.LogStatus("Add Visitors Bar Code: "+BarCodeValue);
 
         MobileNoSuggestThread();
 
@@ -563,26 +554,25 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         mobilesuggestthread.interrupt();
                     }
                     String Message = "";
-                    if (details.isVisitorsCheckOutSuccess()) {
+                    if (details.isSmartIn()) {
                         mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutSuccess(false);
+                        details.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
+                    }
+                    if (details.isSmartOut()) {
+                        mobilesuggestthread.interrupt();
+                        details.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(AddVisitors_EL201.this);
                         functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
                     }
-                    if (details.isVisitorsCheckOutFailure()) {
+                    if (details.isSmartError()) {
                         mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutFailure(false);
+                        details.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
-                    }
-                    if (details.isVisitorsCheckOutDone()) {
-                        mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(AddVisitors_EL201.this, Message);
                     }
                 } catch (Exception e) {
@@ -1001,6 +991,8 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 endbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        editor.putString("BarCode", BarCodeValue);
+                        editor.commit();
                         if (nfcavailable) {
                             writeNFC = true;
                             showdialog(NFC_DLG);
@@ -1076,6 +1068,8 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                 TextInputLayout tilotp = (TextInputLayout) otpll.findViewById(R.id.otp_Til);
                 tilotp.setVisibility(View.VISIBLE);
                 final EditText otpetTxt = (EditText) otpll.findViewById(R.id.dialogotp_etTxt);
+                RadioGroup otpselection = (RadioGroup) otpll.findViewById(R.id.rg_visitor_type);
+                otpselection.setVisibility(View.GONE);
 
                 otpbuilder.setPositiveButton("CONFIRM", new DialogInterface.OnClickListener() {
                     @Override
@@ -1493,8 +1487,7 @@ public class AddVisitors_EL201 extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(details, result,
-                Organizationid, GuardID);
+        SmartCheckinout checkOut = task.new SmartCheckinout(details, result, Organizationid, GuardID);
         checkOut.execute();
         dialog = ProgressDialog.show(AddVisitors_EL201.this, "", "Checking Out...", true);
         mobilesuggestthread = null;

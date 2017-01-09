@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 checkPermissionsMandAbove();
             }
-        }, 2000);
+        }, 1000);
 
         if (loginsuccess) {
             Intent login = new Intent(MainActivity.this, BlocksActivity.class);
@@ -276,6 +276,7 @@ public class MainActivity extends AppCompatActivity {
                         editor.putString("OverNightTime", OverNightTime);
                         editor.commit();
                         functionCalls.deleteDataBasefile();
+                        functionCalls.LogStatus("Bar Code: "+settings.getString("BarCode", ""));
                         OrganizationPermissions organizationPermissions = task.new OrganizationPermissions(ID, details);
                         organizationPermissions.execute();
                     }

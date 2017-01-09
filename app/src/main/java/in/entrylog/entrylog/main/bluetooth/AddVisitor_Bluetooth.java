@@ -81,6 +81,7 @@ import in.entrylog.entrylog.database.DataBase;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.MobileAutoSuggest;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SMSOTP;
+import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.DataAPI;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
@@ -275,8 +276,6 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
             codevalue = 1;
             String value = String.format(format, codevalue);
             BarCodeValue = value + Organizationid;
-            editor.putString("BarCode", BarCodeValue);
-            editor.commit();
         } else {
             String code = settings.getString("BarCode", "");
             String barvalue = code.substring(0, 4);
@@ -285,14 +284,10 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                 codevalue = 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             } else {
                 codevalue = codevalue + 1;
                 String value = String.format(format, codevalue);
                 BarCodeValue = value + Organizationid;
-                editor.putString("BarCode", BarCodeValue);
-                editor.commit();
             }
         }
 
@@ -638,28 +633,26 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         showdialog(MOBILE_DLG);
                         mobilesuggestthread.interrupt();
                     }
-
                     String Message = "";
-                    if (details.isVisitorsCheckOutSuccess()) {
+                    if (details.isSmartIn()) {
                         mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutSuccess(false);
+                        details.setSmartIn(false);
+                        dialog.dismiss();
+                        Message = "Successfully Checked In";
+                        functionCalls.smartCardStatus(AddVisitor_Bluetooth.this, Message);
+                    }
+                    if (details.isSmartOut()) {
+                        mobilesuggestthread.interrupt();
+                        details.setSmartOut(false);
                         dialog.dismiss();
                         Message = "Successfully Checked Out";
-                        functionCalls.ringtone(AddVisitor_Bluetooth.this);
                         functionCalls.smartCardStatus(AddVisitor_Bluetooth.this, Message);
                     }
-                    if (details.isVisitorsCheckOutFailure()) {
+                    if (details.isSmartError()) {
                         mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutFailure(false);
+                        details.setSmartError(false);
                         dialog.dismiss();
-                        Message = "Checked Out Failed";
-                        functionCalls.smartCardStatus(AddVisitor_Bluetooth.this, Message);
-                    }
-                    if (details.isVisitorsCheckOutDone()) {
-                        mobilesuggestthread.interrupt();
-                        details.setVisitorsCheckOutDone(false);
-                        dialog.dismiss();
-                        Message = "Checked Out Already Done";
+                        Message = "Checking Error.. Please swipe again..";
                         functionCalls.smartCardStatus(AddVisitor_Bluetooth.this, Message);
                     }
                 } catch (Exception e) {
@@ -1269,6 +1262,8 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                 endbuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        editor.putString("BarCode", BarCodeValue);
+                        editor.commit();
                         if (nfcavailable) {
                             writeNFC = true;
                             showdialog(NFC_DLG);
@@ -1339,6 +1334,8 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                 TextInputLayout tilotp = (TextInputLayout) otpll.findViewById(R.id.otp_Til);
                 tilotp.setVisibility(View.VISIBLE);
                 final EditText otpetTxt = (EditText) otpll.findViewById(R.id.dialogotp_etTxt);
+                RadioGroup otpselection = (RadioGroup) otpll.findViewById(R.id.rg_visitor_type);
+                otpselection.setVisibility(View.GONE);
 
                 otpbuilder.setPositiveButton("CONFIRM", new DialogInterface.OnClickListener() {
                     @Override
@@ -1867,7 +1864,7 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     }
 
     public void checkingout(String result) {
-        ConnectingTask.VisitorsCheckOut checkOut = task.new VisitorsCheckOut(details, result,
+        SmartCheckinout checkOut = task.new SmartCheckinout(details, result,
                 Organizationid, GuardID);
         checkOut.execute();
         dialog = ProgressDialog.show(AddVisitor_Bluetooth.this, "", "Checking Out...", true);
