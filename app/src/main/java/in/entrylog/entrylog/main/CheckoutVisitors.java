@@ -74,7 +74,7 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.manual_checkout, menu);
+        getMenuInflater().inflate(R.menu.menu_manual_checkout, menu);
         return true;
     }
 

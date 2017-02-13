@@ -79,6 +79,7 @@
         <activity android:name=".main.bluetooth.Visitor_Details_Bluetooth" />
         <activity android:name=".main.el201.Visitor_Details_EL201" />
         <activity android:name=".main.apponitments.Appointments" />
+        <activity android:name=".main.Search_Appointment_Details"/>
         <activity android:name=".main.apponitments.Appointment_Details"></activity>
     </application>
 

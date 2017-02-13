@@ -664,4 +664,34 @@ public class ReceivingData {
             e.printStackTrace();
         }
     }
+
+    public void AllAppointmentsSearchDetails(String result, DetailsValue details, ArrayList<DetailsValue> arrayList,
+                                       AppointmentAdapters adapters) {
+        try {
+            JSONArray ja = new JSONArray(result);
+            for (int i = 0; i < ja.length(); i++) {
+                JSONObject jo = ja.getJSONObject(i);
+                if (jo != null) {
+                    String Status = jo.getString("message");
+                    if (Status.equals("Success")) {
+                        details.setAppointmentsFound(true);
+                        details = new DetailsValue();
+                        details.setVisitors_Name(jo.getString("visitor_name"));
+                        details.setVisitors_Mobile(jo.getString("visitor_mobile"));
+                        details.setVisitors_Email(jo.getString("visitor_email"));
+                        details.setVisitors_tomeet(jo.getString("to_meet"));
+                        details.setAppointmentDate(jo.getString("appointment_date"));
+                        details.setAppointmentTime(jo.getString("appointment_time"));
+                        details.setPurpose(jo.getString("purpose"));
+                        arrayList.add(details);
+                        adapters.notifyDataSetChanged();
+                    } else {
+                        details.setAppointmentsNotFound(true);
+                    }
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 }

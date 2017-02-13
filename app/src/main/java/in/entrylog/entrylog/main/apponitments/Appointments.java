@@ -1,6 +1,7 @@
 package in.entrylog.entrylog.main.apponitments;
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
@@ -25,17 +26,25 @@ import android.text.TextWatcher;
 import android.view.Surface;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.adapters.AppointmentAdapters;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.AllAppointments;
+import in.entrylog.entrylog.main.Search_Appointment_Details;
 import in.entrylog.entrylog.main.Visitors;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
@@ -43,7 +52,9 @@ import in.entrylog.entrylog.values.FunctionCalls;
 public class Appointments extends AppCompatActivity implements View.OnClickListener {
     public static final String PREFS_NAME = "MyPrefsFile";
     private static final int REQUEST_FOR_ACTIVITY_CODE = 1;
-    public static final int APPOINTMENTS_DLG = 2;
+    public static final int APPOINTMENTS_DLG = 3;
+    public static final int DATE_DLG = 2;
+
 
     //region Declaration
     RecyclerView Appointmentview;
@@ -53,12 +64,15 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
     ConnectingTask task;
     DetailsValue detailsValue;
     String Organization_ID, ContextView, CheckingUser, SearchName="", SearchMobile="", SearchTomeet="",
-            SearchVehicle="", Device="", PrinterType = "";
-    Button Search_btn, SearchByName_btn, SearchByMobile_btn, SearchByVehicle_btn, SearchByToMeet_btn, Reset_btn;
-    boolean searchname = false, searchmobile = false, searchtomeet = false, searchvehicle = false, searchcheckin = false,
-            searchcheckout = false, result = false;
-    EditText et_SearchName, et_SearchMobile, et_SearchTomeet, et_SearchVehicle;
-    TextInputLayout Til_SearchName, Til_SearchMobile, Til_SearchTomeet, Til_SearchVehicle;
+            Device="", PrinterType = "",  CheckinDate="";
+    Button Search_btn, SearchByName_btn, SearchByMobile_btn, Checkin_btn, SearchByToMeet_btn, Reset_btn;
+    boolean searchname = false, searchmobile = false, searchtomeet = false, searchcheckin = false,
+           result = false,checkindate = false;
+    EditText et_SearchName, et_SearchMobile, et_SearchTomeet;
+    TextInputLayout Til_SearchName, Til_SearchMobile, Til_SearchTomeet;
+    LinearLayout CheckinLayout;
+    ImageView Edit_Checkin;
+    TextView tv_CheckIndate;
     int year, month, date;
     SharedPreferences settings;
     Thread appointmentsthread;
@@ -71,6 +85,9 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.mipmap.ic_entrylog_icon);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_appointments);
 
@@ -98,24 +115,35 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
         SearchByName_btn.setOnClickListener(this);
         SearchByMobile_btn = (Button) findViewById(R.id.searchvisitor_mobile_btn);
         SearchByMobile_btn.setOnClickListener(this);
-        SearchByVehicle_btn = (Button) findViewById(R.id.searchvisitor_vehicle_btn);
-        SearchByVehicle_btn.setOnClickListener(this);
+
         SearchByToMeet_btn = (Button) findViewById(R.id.searchvisitor_tomeet_btn);
         SearchByToMeet_btn.setOnClickListener(this);
+
+        Checkin_btn = (Button) findViewById(R.id.checkindate_btn);
+        Checkin_btn.setOnClickListener(this);
         //endregion
 
         //region Text Input Layout Initialization
         Til_SearchName = (TextInputLayout) findViewById(R.id.searchvisitor_name_Til);
         Til_SearchMobile = (TextInputLayout) findViewById(R.id.searchvisitor_mobile_Til);
         Til_SearchTomeet = (TextInputLayout) findViewById(R.id.searchvisitor_tomeet_Til);
-        Til_SearchVehicle = (TextInputLayout) findViewById(R.id.searchvisitor_vehicle_Til);
         //endregion
+
+        //region CheckDates Linear Layout Initialization
+        CheckinLayout = (LinearLayout) findViewById(R.id.checkin_layout);
+        //endregion
+
+        //region Check Date Edit Initialization
+        Edit_Checkin = (ImageView) findViewById(R.id.checkindate_edit);
+        Edit_Checkin.setOnClickListener(this);
+
+        //region TextView Initialization
+        tv_CheckIndate = (TextView) findViewById(R.id.checkindate_Txt);
 
         //region Edit Text Initialization
         et_SearchName = (EditText) findViewById(R.id.searchvisitor_name);
         et_SearchMobile = (EditText) findViewById(R.id.searchvisitor_mobile);
         et_SearchTomeet = (EditText) findViewById(R.id.searchvisitor_tomeet);
-        et_SearchVehicle = (EditText) findViewById(R.id.searchvisitor_vehicle);
         //endregion
 
         //region RecyclerView with Adapter
@@ -227,29 +255,23 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    protected void showdialog(int id) {
-        Dialog dialog = null;
-        switch (id) {
-            case APPOINTMENTS_DLG:
-                AlertDialog.Builder novisitors = new AlertDialog.Builder(this);
-                novisitors.setTitle("Visitor Details");
-                novisitors.setCancelable(false);
-                novisitors.setMessage("No Visitors Found to display..");
-                novisitors.setNeutralButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        finish();
-                    }
-                });
-                AlertDialog alertdialog = novisitors.create();
-                alertdialog.show();
-                break;
-        }
-    }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+
+            case R.id.checkindate_btn:
+                CheckinDate = "";
+                searchbtn();
+                checkindate = true;
+                showdialog(DATE_DLG);
+                break;
+
+            case R.id.checkindate_edit:
+                checkindate = true;
+                showdialog(DATE_DLG);
+                break;
+
             case R.id.searchvisitor_name_btn:
                 SearchName = "";
                 SearchByName_btn.setVisibility(View.GONE);
@@ -283,19 +305,73 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
 
-            case R.id.searchvisitor_vehicle_btn:
-                SearchVehicle = "";
-                SearchByVehicle_btn.setVisibility(View.GONE);
-                searchbtn();
-                reset();
-                searchvehicle = true;
-                if (Til_SearchVehicle.getVisibility() != View.VISIBLE) {
-                    Til_SearchVehicle.setVisibility(View.VISIBLE);
-                }
+               case R.id.reset_btn:
+                fullreset();
                 break;
 
-            case R.id.reset_btn:
-                fullreset();
+            case R.id.search_btn:
+                for (int i = 0; i < 6; i++) {
+                    if (i == 0) {
+                        if (searchname) {
+                            if (!et_SearchName.getText().toString().equals("")) {
+                                SearchName = et_SearchName.getText().toString();
+                                result = true;
+                            } else {
+                                result = false;
+                                Toast.makeText(Appointments.this, "Please Enter Search Name", Toast.LENGTH_SHORT).show();
+                                break;
+                            }
+                        }
+                    }
+                    if (i == 1) {
+                        if (searchmobile) {
+                            if (!et_SearchMobile.getText().toString().equals("")) {
+                                SearchMobile = et_SearchMobile.getText().toString();
+                                result = true;
+                            } else {
+                                result = false;
+                                Toast.makeText(Appointments.this, "Please Enter Search Mobile", Toast.LENGTH_SHORT).show();
+                                break;
+                            }
+                        }
+                    }
+                    if (i == 2) {
+                        if (searchtomeet) {
+                            if (!et_SearchTomeet.getText().toString().equals("")) {
+                                SearchTomeet = et_SearchTomeet.getText().toString();
+                                result = true;
+                            } else {
+                                result = false;
+                                Toast.makeText(Appointments.this, "Please Enter Search ToMeet", Toast.LENGTH_SHORT).show();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (i == 3) {
+                        if (searchcheckin) {
+                            if (!CheckinDate.equals("")) {
+                                result = true;
+                            } else {
+                                result = false;
+                                Toast.makeText(Appointments.this, "Please Select Appointment in Date", Toast.LENGTH_SHORT).show();
+                                break;
+                            }
+                        }
+                    }
+
+                }
+                if (result) {
+                    result = false;
+                    Intent intent = new Intent(Appointments.this, Search_Appointment_Details.class);
+                    intent.putExtra("ID", Organization_ID);
+                    intent.putExtra("VIEW", ContextView);
+                    intent.putExtra("ACHECKINDATE", CheckinDate);
+                    intent.putExtra("ASEARCHNAME", SearchName);
+                    intent.putExtra("ASEARCHMOBILE", SearchMobile);
+                    intent.putExtra("ASEARCHTOMEET", SearchTomeet);
+                    startActivityForResult(intent, 2);
+                }
                 break;
         }
     }
@@ -325,20 +401,19 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                 SearchTomeet = "";
             }
         }
-        if (searchvehicle) {
-            if (et_SearchVehicle.getText().toString().equals("")) {
-                searchvehicle = false;
-                Til_SearchVehicle.setVisibility(View.GONE);
-                SearchByVehicle_btn.setVisibility(View.VISIBLE);
-                SearchVehicle = "";
-            }
-        }
+
     }
 
     private void fullreset() {
         Search_btn.setVisibility(View.GONE);
         Reset_btn.setVisibility(View.GONE);
         Appointmentview.setVisibility(View.VISIBLE);
+        if (searchcheckin) {
+            searchcheckin = false;
+            CheckinLayout.setVisibility(View.GONE);
+            Checkin_btn.setVisibility(View.VISIBLE);
+            CheckinDate = "";
+        }
         if (searchname) {
             searchname = false;
             Til_SearchName.setVisibility(View.GONE);
@@ -360,13 +435,7 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
             SearchByToMeet_btn.setVisibility(View.VISIBLE);
             SearchTomeet = "";
         }
-        if (searchvehicle) {
-            searchvehicle = false;
-            Til_SearchVehicle.setVisibility(View.GONE);
-            et_SearchVehicle.setText("");
-            SearchByVehicle_btn.setVisibility(View.VISIBLE);
-            SearchVehicle = "";
-        }
+
     }
 
     @Override
@@ -490,5 +559,64 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
+    }
+
+    public DatePickerDialog.OnDateSetListener dpd = new DatePickerDialog.OnDateSetListener() {
+        @Override
+        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+            Date Starttime = null;
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+            try {
+                Starttime = new SimpleDateFormat("dd/MM/yyyy").parse((""+ dayOfMonth + "/" + ""+ (monthOfYear + 1) + "/" + ""+year));
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            String dateselected = sdf.format(Starttime);
+            if (checkindate) {
+                checkindate = false;
+                Checkin_btn.setVisibility(View.GONE);
+                CheckinLayout.setVisibility(View.VISIBLE);
+                CheckinDate = dateselected;
+                tv_CheckIndate.setText(dateselected);
+                searchcheckin = true;
+            } /*else if (checkoutdate) {
+                checkoutdate = false;
+                Checkout_btn.setVisibility(View.GONE);
+                CheckoutLayout.setVisibility(View.VISIBLE);
+                CheckoutDate = dateselected;
+                tv_CheckOutdate.setText(dateselected);
+                searchcheckout = true;
+            }*/
+        }
+    };
+    protected void showdialog(int id) {
+        Dialog dialog = null;
+        switch (id) {
+            case DATE_DLG:
+                Calendar cal = Calendar.getInstance();
+                year = cal.get(Calendar.YEAR);
+                month = cal.get(Calendar.MONTH);
+                date = cal.get(Calendar.DAY_OF_MONTH);
+                DatePickerDialog dp = new DatePickerDialog(Appointments.this, dpd, year, month, date);
+                dp.getDatePicker().setMaxDate(cal.getTimeInMillis());
+                dialog = dp;
+                dialog.show();
+                break;
+
+            case APPOINTMENTS_DLG:
+                AlertDialog.Builder novisitors = new AlertDialog.Builder(this);
+                novisitors.setTitle("Appointment Details");
+                novisitors.setCancelable(false);
+                novisitors.setMessage("No Appointments Found to display..");
+                novisitors.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+                AlertDialog alertdialog = novisitors.create();
+                alertdialog.show();
+                break;
+        }
     }
 }

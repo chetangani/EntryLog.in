@@ -402,4 +402,22 @@ public class SendingData {
         }
         return response;
     }
+
+    public String SearchAppointments (String Organization_id, String name, String mobile, String tomeet,String date) {
+        String response = "";
+        HashMap<String, String> datamap = new HashMap<>();
+        datamap.put("organization_id", Organization_id);
+        datamap.put("visitor_name", name);
+        datamap.put("visitor_mobile", mobile);
+        datamap.put("staff_id", tomeet);
+        datamap.put("appointment_date", date);
+
+
+        try {
+            response = UrlPostConnection("Staff_appointments_search", datamap);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
 }
