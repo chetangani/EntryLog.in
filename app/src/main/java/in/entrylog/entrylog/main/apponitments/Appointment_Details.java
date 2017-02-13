@@ -44,5 +44,6 @@ public class Appointment_Details extends AppCompatActivity {
         tv_appointment_date.setText(Appointment_Date);
         tv_appointment_time.setText(Appointment_Time);
         tv_appointment_purpose.setText(Appointment_Purpose);
+
     }
 }
