@@ -24,6 +24,7 @@ import java.util.HashSet;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import in.entrylog.entrylog.adapters.AppointmentAdapters;
 import in.entrylog.entrylog.adapters.VisitorsAdapters;
 import in.entrylog.entrylog.main.Visitors;
 import in.entrylog.entrylog.values.DetailsValue;
@@ -361,11 +362,6 @@ public class ConnectingTask {
         }
 
         @Override
-        protected void onPreExecute() {
-
-        }
-
-        @Override
         protected void onPostExecute(String result) {
             receivingData.AllVisitorsStatus(result, detailsValue, arrayList, adapters);
         }
@@ -692,6 +688,40 @@ public class ConnectingTask {
         @Override
         protected void onPostExecute(String result) {
             receivingData.SmartCheckInOutStatus(result, detailsValue);
+        }
+    }
+
+    public class AllAppointments extends AsyncTask<String, String, String> {
+        ArrayList<DetailsValue> arrayList;
+        AppointmentAdapters adapters;
+        DetailsValue detailsValue;
+        String Organization_ID, result="";
+
+        public AllAppointments(ArrayList<DetailsValue> arrayList, AppointmentAdapters adapters, DetailsValue detailsValue,
+                               String organization_ID) {
+            this.arrayList = arrayList;
+            this.adapters = adapters;
+            this.detailsValue = detailsValue;
+            Organization_ID = organization_ID;
+        }
+
+        @Override
+        protected String doInBackground(String... params) {
+            try {
+                result = sendingData.AllAppointments(Organization_ID);
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            Log.d("debug", result);
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            receivingData.AllAppointmentsDetails(result, detailsValue, arrayList, adapters);
+            super.onPostExecute(result);
         }
     }
 }

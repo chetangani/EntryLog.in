@@ -47,6 +47,7 @@ import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.CheckUpdatedApk;
 import in.entrylog.entrylog.dataposting.ConnectingTask.LogoutUser;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
+import in.entrylog.entrylog.main.apponitments.Appointments;
 import in.entrylog.entrylog.main.bluetooth.AddVisitor_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.AddVisitors_EL101;
 import in.entrylog.entrylog.main.el201.AddVisitors_EL201;
@@ -244,7 +245,8 @@ public class BlocksActivity extends AppCompatActivity {
                         manualcheckoutbtn = true;
                         showdialog(DEVICE_DLG);
                     } else {
-                        visitors(Visitors.class, "Manually Checkout");
+                        Intent intent = new Intent(BlocksActivity.this, Appointments.class);
+                        startActivity(intent);
                     }
                 } else {
                     Toast.makeText(BlocksActivity.this, "Please Turn On Internet", Toast.LENGTH_SHORT).show();
@@ -417,12 +419,16 @@ public class BlocksActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
                             if (apkFile.exists()) {
-                                updatethread.interrupt();
+                                apkFile.delete();
+                                DownloadLatestApk downloadLatestApk = new DownloadLatestApk();
+                                downloadLatestApk.execute();
+                                functionCalls.LogStatus("Apk file exist and deleted downloading necessary");
+                                /*updatethread.interrupt();
                                 try {
                                     functionCalls.LogStatus("Apk file exist so don't need to download apk..");
                                     UpdateApp(apkFile);
                                 } catch (ActivityNotFoundException e) {
-                                }
+                                }*/
                             } else {
                                 DownloadLatestApk downloadLatestApk = new DownloadLatestApk();
                                 downloadLatestApk.execute();
@@ -580,7 +586,7 @@ public class BlocksActivity extends AppCompatActivity {
                         }
                         compare(Appversion, Serverapkversion);
                     }
-                    if (appdownloaded) {
+                    /*if (appdownloaded) {
                         appdownloaded = false;
                         updatethread.interrupt();
                         File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
@@ -591,7 +597,7 @@ public class BlocksActivity extends AppCompatActivity {
                             }
                         } catch (ActivityNotFoundException e) {
                         }
-                    }
+                    }*/
                     String Message = "";
                     if (detailsValue.isSmartIn()) {
                         updatethread.interrupt();
@@ -710,6 +716,15 @@ public class BlocksActivity extends AppCompatActivity {
         protected void onPostExecute(String unused) {
             dismissDialog(DIALOG_DOWNLOAD_PROGRESS);
             appdownloaded = true;
+            updatethread.interrupt();
+            File apkFile = new File(functionCalls.checkapkfilepath(Apkfile));
+            try {
+                if (apkFile.exists()) {
+                    functionCalls.LogStatus("Apk file exist");
+                    UpdateApp(apkFile);
+                }
+            } catch (ActivityNotFoundException e) {
+            }
         }
     }
 

@@ -32,6 +32,14 @@
     <string name="menu_logout">Logout</string>
     <string name="forgot_password">Forgot Password</string>
     <string name="section_format">Hello World from section: %1$d</string>
+    <string name="menu_manual_checkout">Manual Checkout</string>
+    <string name="name">Name</string>
+    <string name="mobile">Mobile</string>
+    <string name="email">Email</string>
+    <string name="tomeet">To Meet</string>
+    <string name="appointmentdate">Appointment Date</string>
+    <string name="appointmenttime">Appointment Time</string>
+    <string name="purpose">Purpose</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

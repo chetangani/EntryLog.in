@@ -15,6 +15,8 @@ import android.nfc.NfcManager;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -68,6 +70,24 @@ public class CheckoutVisitors extends AppCompatActivity implements ZXingScannerV
 
         OrganizationID = settings.getString("OrganizationID", "");
         SecurityID = settings.getString("GuardID", "");
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.manual_checkout, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_manual_checkout:
+                Intent manual = new Intent(CheckoutVisitors.this, Visitors.class);
+                manual.putExtra("VIEW", "Manually Checkout");
+                startActivity(manual);
+                finish();
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override

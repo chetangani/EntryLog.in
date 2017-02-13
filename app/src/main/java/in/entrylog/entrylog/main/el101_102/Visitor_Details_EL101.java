@@ -30,7 +30,7 @@ import java.util.HashSet;
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
-import in.entrylog.entrylog.main.CustomVolleyRequest;
+import in.entrylog.entrylog.values.CustomVolleyRequest;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.values.DataPrinting;
 import in.entrylog.entrylog.values.DetailsValue;

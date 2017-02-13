@@ -390,4 +390,16 @@ public class SendingData {
         }
         return response;
     }
+
+    public String AllAppointments (String Organization_id) {
+        String response = "";
+        HashMap<String, String> datamap = new HashMap<>();
+        datamap.put("organization_id", Organization_id);
+        try {
+            response = UrlPostConnection("Staff_appointments", datamap);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
+    }
 }

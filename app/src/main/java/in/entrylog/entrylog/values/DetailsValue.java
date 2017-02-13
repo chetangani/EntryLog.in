@@ -9,14 +9,15 @@ public class DetailsValue {
     private boolean LoginSuccess, LoginFailure, Fieldsexists, NoFieldsExists, VisitorCheckedIn, VisitorCheckInError, VisitorsCheckOutSuccess,
             VisitorsCheckOutFailure, VisitorImageUpload, MobileAutoSuggestSuccess, MobileAutoSuggestFailure, MobileNoExist, LoginExist,
             VisitorsCheckOutDone, NoVisitorsFound, VisitorsFound, StaffExists, NoStaffExist, PrinterOrderSuccess, PrinterOrderNoData,
-            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist, GotTime, NoTime, SmartIn, SmartOut, SmartError;
+            Accountblocked, PermissionSuccess, PermissionFailure, Apkfilexist, GotTime, NoTime, SmartIn, SmartOut, SmartError,
+            AppointmentsFound, AppointmentsNotFound;
     private String GuardID, OrganizationID, OrganizationName, Fields, ImageFileName, VisitorsId, OverNightStay_Time;
     private int DisplayFields;
     private String Visitors_Name, Visitors_Email, Visitors_Mobile, Visitors_Address, Visitors_tomeet, Visitors_VehicleNo, Visitors_Photo,
             Visitors_CheckInTime, Visitors_CheckInBy, Visitor_ID, Visitors_CheckOutTime, Visitors_BarCode, Check_in_User,
             Check_out_User, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, OTPAccess, ImageAccess, Printertype, Scannertype, RfidStatus, DeviceModel, Cameratype, Apkfile,
-            ApkdownloadUrl, ServerTime, ID_Card_Type;
+            ApkdownloadUrl, ServerTime, ID_Card_Type, AppointmentDate, AppointmentTime;
     private BluetoothSocket Socket;
     private BluetoothDevice device;
     private static ArrayList<String> arrayFields;
@@ -655,5 +656,37 @@ public class DetailsValue {
 
     public void setSmartError(boolean smartError) {
         SmartError = smartError;
+    }
+
+    public boolean isAppointmentsFound() {
+        return AppointmentsFound;
+    }
+
+    public void setAppointmentsFound(boolean appointmentsFound) {
+        AppointmentsFound = appointmentsFound;
+    }
+
+    public boolean isAppointmentsNotFound() {
+        return AppointmentsNotFound;
+    }
+
+    public void setAppointmentsNotFound(boolean appointmentsNotFound) {
+        AppointmentsNotFound = appointmentsNotFound;
+    }
+
+    public String getAppointmentDate() {
+        return AppointmentDate;
+    }
+
+    public void setAppointmentDate(String appointmentDate) {
+        AppointmentDate = appointmentDate;
+    }
+
+    public String getAppointmentTime() {
+        return AppointmentTime;
+    }
+
+    public void setAppointmentTime(String appointmentTime) {
+        AppointmentTime = appointmentTime;
     }
 }

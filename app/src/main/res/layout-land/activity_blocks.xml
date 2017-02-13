@@ -81,7 +81,7 @@
                     android:layout_marginTop="25dp"
                     android:layout_weight="0.5"
                     android:drawableLeft="@drawable/manualcheckout_black"
-                    android:text="MANUAL CHECKOUT"
+                    android:text="APPOINTMENTS"
                     android:textAlignment="center"
                     android:textColor="@android:color/white"
                     android:textSize="21sp"

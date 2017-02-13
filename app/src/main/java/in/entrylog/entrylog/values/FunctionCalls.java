@@ -168,6 +168,18 @@ public class FunctionCalls {
         return result;
     }
 
+    public String ConvertApointmentDate(String date) {
+        String result="";
+        try {
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            final Date dateObj = sdf.parse(date);
+            result = new SimpleDateFormat("dd-MM-yyyy").format(dateObj);
+        } catch (final ParseException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
     public void checkimage_and_delete(String foldername, String MobileNo, String presentfile) {
         String folderpath = filepath(foldername);
         int mobilenolength = MobileNo.length();

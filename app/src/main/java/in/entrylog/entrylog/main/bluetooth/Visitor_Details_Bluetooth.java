@@ -57,7 +57,7 @@ import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.SmartCheckinout;
 import in.entrylog.entrylog.dataposting.ConnectingTask.VisitorManualCheckout;
-import in.entrylog.entrylog.main.CustomVolleyRequest;
+import in.entrylog.entrylog.values.CustomVolleyRequest;
 import in.entrylog.entrylog.main.services.FieldsService;
 import in.entrylog.entrylog.main.services.PrintingService;
 import in.entrylog.entrylog.myprinter.BTPrinting;

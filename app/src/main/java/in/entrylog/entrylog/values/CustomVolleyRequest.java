@@ -1,4 +1,4 @@
-package in.entrylog.entrylog.main;
+package in.entrylog.entrylog.values;
 
 import android.content.Context;
 import android.graphics.Bitmap;

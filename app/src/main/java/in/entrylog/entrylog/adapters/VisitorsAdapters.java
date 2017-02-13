@@ -3,22 +3,19 @@ package in.entrylog.entrylog.adapters;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.NetworkImageView;
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
 import in.entrylog.entrylog.R;
-import in.entrylog.entrylog.main.CustomVolleyRequest;
+import in.entrylog.entrylog.values.CustomVolleyRequest;
 import in.entrylog.entrylog.main.bluetooth.Visitor_Details_Bluetooth;
 import in.entrylog.entrylog.main.el101_102.Visitor_Details_EL101;
 import in.entrylog.entrylog.main.el201.Visitor_Details_EL201;
@@ -29,8 +26,6 @@ import in.entrylog.entrylog.values.FunctionCalls;
 /**
  * Created by Admin on 14-Jun-16.
  */
-
-
 
 public class VisitorsAdapters extends RecyclerView.Adapter<VisitorsAdapters.VisitorsViewHolder> {
 

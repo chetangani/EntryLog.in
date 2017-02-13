@@ -803,7 +803,7 @@ public class Visitors extends AppCompatActivity implements OnClickListener {
     public void checkingout(String result) {
         SmartCheckinout checkOut = task.new SmartCheckinout(detailsValue, result, Organization_ID, CheckingUser);
         checkOut.execute();
-        dialog = ProgressDialog.show(Visitors.this, "", "Checking Out...", true);
+        dialog = ProgressDialog.show(Visitors.this, "", "Checking...", true);
         visitorsthread = null;
         Runnable runnable = new VisitorsTimer();
         visitorsthread = new Thread(runnable);

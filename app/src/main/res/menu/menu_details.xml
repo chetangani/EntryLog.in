@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".main.Visitors">
     <item
+        android:title="Search"
+        app:showAsAction="always" />
+    <item
         android:id="@+id/menu_icon"
         android:title=" "
         android:icon="@drawable/ic_reorder_white"
