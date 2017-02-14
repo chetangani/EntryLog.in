@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".main.Visitors">
+    <item
+        android:id="@+id/menu_manual"
+        android:title=" "
+        android:icon="@drawable/ic_reorder_white"
+        app:showAsAction="always" >
+        <menu>
+            <item
+                android:id="@+id/menu_manual_checkout"
+                android:title="@string/menu_manual_checkout"
+                app:showAsAction="ifRoom" />
+        </menu>
+    </item>
+</menu>
