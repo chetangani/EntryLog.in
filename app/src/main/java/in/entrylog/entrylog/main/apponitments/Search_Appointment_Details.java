@@ -47,7 +47,7 @@ public class Search_Appointment_Details extends AppCompatActivity {
     ConnectingTask task;
     DetailsValue detailsValue;
     String Organization_ID, ContextView, CheckingUser, CheckinDate="", CheckoutDate="", SearchName="", SearchEmail="",
-            SearchMobile="", SearchTomeet="", SearchVehicle="", Device="", PrinterType;
+            SearchMobile="", SearchTomeet="", SearchVehicle="", Device="", PrinterType, SearchTOmeetID="";
     LinearLayout SearchVehicle_layout, SearchDetails_layout, SearchDetails2_layout, SearchCheckdate_layout, Searchtomeet_layout,
         SearchMobile_layout, SearchName_layout, SearchCheckin_layout, SearchCheckout_layout;
     TextView tv_CheckinDate, tv_CheckoutDate, tv_VisitorName, tv_VisitorMobile, tv_VisitorMeet, tv_VisitorVehicle;
@@ -81,7 +81,8 @@ public class Search_Appointment_Details extends AppCompatActivity {
         CheckinDate = bnd.getString("ACHECKINDATE");
         SearchName = bnd.getString("ASEARCHNAME");
         SearchMobile = bnd.getString("ASEARCHMOBILE");
-        SearchTomeet = bnd.getString("ASEARCHTOMEET");
+        SearchTomeet = bnd.getString("ASEARCHTOMEET");//
+        SearchTOmeetID = bnd.getString("ASEARCHTOMEETID");
           //endregion
 
         //region Search Linear Layouts Initialization
@@ -123,7 +124,7 @@ public class Search_Appointment_Details extends AppCompatActivity {
             }
         }
         SearchAppointments searchAppointments = task.new SearchAppointments(SearchAppointmentList, SearchAppointmentsadapter,
-                detailsValue, Organization_ID, SearchName, SearchMobile, SearchTomeet, convertdate(CheckinDate));
+                detailsValue, Organization_ID, SearchName, SearchMobile, SearchTOmeetID, convertdate(CheckinDate));
         searchAppointments.execute();
         dialog = ProgressDialog.show(Search_Appointment_Details.this, "", "Searching for a Appointments..", true);
         visitorsthread = null;
@@ -309,9 +310,9 @@ public class Search_Appointment_Details extends AppCompatActivity {
         switch (id) {
             case VISITORS_DLG:
                 AlertDialog.Builder novisitors = new AlertDialog.Builder(this);
-                novisitors.setTitle("Visitor Details");
+                novisitors.setTitle("Appointment Details");
                 novisitors.setCancelable(false);
-                novisitors.setMessage("No Visitors Found to display..");
+                novisitors.setMessage("No Appointment Found to display..");
                 novisitors.setNeutralButton("OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

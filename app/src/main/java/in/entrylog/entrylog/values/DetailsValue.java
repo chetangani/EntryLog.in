@@ -17,7 +17,7 @@ public class DetailsValue {
             Visitors_CheckInTime, Visitors_CheckInBy, Visitor_ID, Visitors_CheckOutTime, Visitors_BarCode, Check_in_User,
             Check_out_User, Visitor_Designation, Department, Purpose, House_number, Flat_number, Block, No_Visitor, aClass, Section,
             Student_Name, ID_Card, OTPAccess, ImageAccess, Printertype, Scannertype, RfidStatus, DeviceModel, Cameratype, Apkfile,
-            ApkdownloadUrl, ServerTime, ID_Card_Type, AppointmentDate, AppointmentTime;
+            ApkdownloadUrl, ServerTime, ID_Card_Type, AppointmentDate, AppointmentTime, AppointmentStaffName;
     private BluetoothSocket Socket;
     private BluetoothDevice device;
     private static ArrayList<String> arrayFields;
@@ -688,5 +688,13 @@ public class DetailsValue {
 
     public void setAppointmentTime(String appointmentTime) {
         AppointmentTime = appointmentTime;
+    }
+
+    public String getAppointmentStaffName() {
+        return AppointmentStaffName;
+    }
+
+    public void setAppointmentStaffName(String appointmentStaffName) {
+        AppointmentStaffName = appointmentStaffName;
     }
 }

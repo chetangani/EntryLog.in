@@ -69,10 +69,10 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
     ConnectingTask task;
     DetailsValue detailsValue;
     String Organization_ID, ContextView, CheckingUser, SearchName="", SearchMobile="", SearchTomeet="",
-            Device="", PrinterType = "",  CheckinDate="", StaffTomeetId="";
+            Device="", PrinterType = "",  CheckinDate="", StaffTomeetId="", StaffTomeet="";
     Button Search_btn, SearchByName_btn, SearchByMobile_btn, Checkin_btn, SearchByToMeet_btn, Reset_btn;
     boolean searchname = false, searchmobile = false, searchtomeet = false, searchcheckin = false,
-           result = false,checkindate = false;
+           result = false, checkindate = false;
     EditText et_SearchName, et_SearchMobile;
     AutoCompleteTextView et_SearchTomeet;
     TextInputLayout Til_SearchName, Til_SearchMobile, Til_SearchTomeet;
@@ -291,7 +291,8 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
             et_SearchTomeet.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    StaffTomeetId = listid.get(parent.getItemAtPosition(position).toString());
+                    StaffTomeet = parent.getItemAtPosition(position).toString();
+                    StaffTomeetId = listid.get(parent.getItemAtPosition(position).toString().toLowerCase());
                 }
             });
         } else {
@@ -423,7 +424,8 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                     intent.putExtra("ACHECKINDATE", CheckinDate);
                     intent.putExtra("ASEARCHNAME", SearchName);
                     intent.putExtra("ASEARCHMOBILE", SearchMobile);
-                    intent.putExtra("ASEARCHTOMEET", SearchTomeet);
+                    intent.putExtra("ASEARCHTOMEET", StaffTomeet);
+                    intent.putExtra("ASEARCHTOMEETID", SearchTomeet);
                     startActivityForResult(intent, REQUEST_FOR_ACTIVITY_CODE);
                 }
                 break;
