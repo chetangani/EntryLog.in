@@ -1225,25 +1225,22 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                         }
                     }
                 });
-                if (settings.getString("OTPAccess", "").equals("Yes")) {
-                    builder.setPositiveButton("OTP", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Visitor_Entry = "1";
-                            otpcheck = true;
-                            checkmobilesuggest(etmobile);
-                        }
-                    });
-                } else {
-                    builder.setPositiveButton("MANUAL", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Visitor_Entry = "2";
-                            manualcheck = true;
-                            checkmobilesuggest(etmobile);
-                        }
-                    });
-                }
+                builder.setPositiveButton("OTP", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Visitor_Entry = "1";
+                        otpcheck = true;
+                        checkmobilesuggest(etmobile);
+                    }
+                });
+                builder.setNegativeButton("MANUAL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Visitor_Entry = "2";
+                        manualcheck = true;
+                        checkmobilesuggest(etmobile);
+                    }
+                });
                 builder.setNeutralButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -1493,16 +1490,16 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
     }
 
     private void Extrafields() {
-        LogStatus("Fetch field Started");
+        functionCalls.LogStatus("Fetch field Started");
         HashSet<String> hashSet = new HashSet<>();
         hashSet = fieldsService.fieldset;
         ArrayList<String> arrayList = new ArrayList<>();
         arrayList.addAll(hashSet);
         if (arrayList.size() > 0) {
-            LogStatus("Size is more than 1");
+            functionCalls.LogStatus("Size is more than 1");
             for (int i = 0; i < arrayList.size(); i++) {
                 String value = arrayList.get(i).toString();
-                LogStatus("Value["+i+"]: "+value);
+                functionCalls.LogStatus("Value["+i+"]: "+value);
                 if (value.equals("Visitor Email")) {
                     emailLayout.setVisibility(View.VISIBLE);
                     emailLayout.setHint("Email Address");
@@ -1557,23 +1554,29 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
                 }
             }
         } else {
-            LogStatus("No Fields Available");
+            functionCalls.LogStatus("No Fields Available");
             showToast("No Fields Available");
         }
-        LogStatus("Staff field Started");
+        functionCalls.LogStatus("Staff field Started");
         HashSet<String> StaffSet = new HashSet<>();
         StaffSet = staffService.staffset;
+        ArrayList<String> list = new ArrayList<>();
+        list.addAll(StaffSet);
         stafflist = new ArrayList<>();
-        stafflist.addAll(StaffSet);
+        for (int i = 0; i < list.size(); i++) {
+            String liststaff = list.get(i);
+            String staff = liststaff.substring(0, liststaff.lastIndexOf(','));
+            stafflist.add(staff);
+        }
         if (stafflist.size() > 0) {
-            LogStatus("Staff list Available");
+            functionCalls.LogStatus("Staff list Available");
             Staffadapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, stafflist);
             tomeet_et.setAdapter(Staffadapter);
             Collections.sort(stafflist);
             Staffadapter.notifyDataSetChanged();
             tomeet_et.setThreshold(1);
         } else {
-            LogStatus("Staff list not Available");
+            functionCalls.LogStatus("Staff list not Available");
         }
     }
 
@@ -1617,10 +1620,6 @@ public class AddVisitor_Bluetooth extends AppCompatActivity {
         if (Til_field12.getVisibility() == View.VISIBLE) {
             ID_Card_type = Et_field12.getText().toString();
         }
-    }
-
-    private void LogStatus(String str) {
-        Log.d("debug", str);
     }
 
     private void showToast(String message) {

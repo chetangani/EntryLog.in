@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="ZCSComboV2.5.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/ZCSComboV2.5.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

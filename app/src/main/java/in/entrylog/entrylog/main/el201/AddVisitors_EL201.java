@@ -954,25 +954,22 @@ public class AddVisitors_EL201 extends AppCompatActivity {
                         }
                     }
                 });
-                if (settings.getString("OTPAccess", "").equals("Yes")) {
-                    builder.setPositiveButton("OTP", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Visitor_Entry = "1";
-                            otpcheck = true;
-                            checkmobilesuggest(etmobile);
-                        }
-                    });
-                } else {
-                    builder.setPositiveButton("MANUAL", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Visitor_Entry = "2";
-                            manualcheck = true;
-                            checkmobilesuggest(etmobile);
-                        }
-                    });
-                }
+                builder.setPositiveButton("OTP", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Visitor_Entry = "1";
+                        otpcheck = true;
+                        checkmobilesuggest(etmobile);
+                    }
+                });
+                builder.setNegativeButton("MANUAL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Visitor_Entry = "2";
+                        manualcheck = true;
+                        checkmobilesuggest(etmobile);
+                    }
+                });
                 builder.setNeutralButton("CANCEL", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -1295,8 +1292,14 @@ public class AddVisitors_EL201 extends AppCompatActivity {
         functionCalls.LogStatus("Staff field Started");
         HashSet<String> StaffSet = new HashSet<>();
         StaffSet = staffService.staffset;
+        ArrayList<String> list = new ArrayList<>();
+        list.addAll(StaffSet);
         stafflist = new ArrayList<>();
-        stafflist.addAll(StaffSet);
+        for (int i = 0; i < list.size(); i++) {
+            String liststaff = list.get(i);
+            String staff = liststaff.substring(0, liststaff.lastIndexOf(','));
+            stafflist.add(staff);
+        }
         if (stafflist.size() > 0) {
             functionCalls.LogStatus("Staff list Available");
             Staffadapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, stafflist);

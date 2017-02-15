@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="devkitapi">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/app/libs/devkitapi.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

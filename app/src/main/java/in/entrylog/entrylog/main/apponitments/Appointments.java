@@ -25,6 +25,9 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Surface;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -38,14 +41,17 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import in.entrylog.entrylog.R;
 import in.entrylog.entrylog.adapters.AppointmentAdapters;
 import in.entrylog.entrylog.dataposting.ConnectingTask;
 import in.entrylog.entrylog.dataposting.ConnectingTask.AllAppointments;
-import in.entrylog.entrylog.main.Search_Appointment_Details;
 import in.entrylog.entrylog.main.Visitors;
+import in.entrylog.entrylog.main.services.StaffService;
 import in.entrylog.entrylog.values.DetailsValue;
 import in.entrylog.entrylog.values.FunctionCalls;
 
@@ -55,7 +61,6 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
     public static final int APPOINTMENTS_DLG = 3;
     public static final int DATE_DLG = 2;
 
-
     //region Declaration
     RecyclerView Appointmentview;
     ArrayList<DetailsValue> AppointmentsList;
@@ -64,11 +69,12 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
     ConnectingTask task;
     DetailsValue detailsValue;
     String Organization_ID, ContextView, CheckingUser, SearchName="", SearchMobile="", SearchTomeet="",
-            Device="", PrinterType = "",  CheckinDate="";
+            Device="", PrinterType = "",  CheckinDate="", StaffTomeetId="";
     Button Search_btn, SearchByName_btn, SearchByMobile_btn, Checkin_btn, SearchByToMeet_btn, Reset_btn;
     boolean searchname = false, searchmobile = false, searchtomeet = false, searchcheckin = false,
            result = false,checkindate = false;
-    EditText et_SearchName, et_SearchMobile, et_SearchTomeet;
+    EditText et_SearchName, et_SearchMobile;
+    AutoCompleteTextView et_SearchTomeet;
     TextInputLayout Til_SearchName, Til_SearchMobile, Til_SearchTomeet;
     LinearLayout CheckinLayout;
     ImageView Edit_Checkin;
@@ -78,6 +84,10 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
     Thread appointmentsthread;
     FunctionCalls functionCalls;
     static ProgressDialog dialog = null;
+    StaffService staffService;
+    ArrayAdapter<String> Staffadapter;
+    static ArrayList<String> stafflist;
+    HashMap<String, String> listid;
     NfcAdapter nfcAdapter;
     NfcManager nfcManager;
     boolean nfcavailable = false;
@@ -94,6 +104,7 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
         detailsValue = new DetailsValue();
         task = new ConnectingTask();
         functionCalls = new FunctionCalls();
+        staffService = new StaffService();
 
         functionCalls.OrientationView(Appointments.this);
 
@@ -143,7 +154,7 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
         //region Edit Text Initialization
         et_SearchName = (EditText) findViewById(R.id.searchvisitor_name);
         et_SearchMobile = (EditText) findViewById(R.id.searchvisitor_mobile);
-        et_SearchTomeet = (EditText) findViewById(R.id.searchvisitor_tomeet);
+        et_SearchTomeet = (AutoCompleteTextView) findViewById(R.id.searchvisitor_tomeet);
         //endregion
 
         //region RecyclerView with Adapter
@@ -255,11 +266,43 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    private void tomeetcontent() {
+        functionCalls.LogStatus("Staff field Started");
+        HashSet<String> StaffSet = new HashSet<>();
+        StaffSet = staffService.staffset;
+        ArrayList<String> list = new ArrayList<>();
+        listid = new HashMap<>();
+        list.addAll(StaffSet);
+        stafflist = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            String liststaff = list.get(i);
+            String staff = liststaff.substring(0, liststaff.lastIndexOf(','));
+            String staffid = liststaff.substring(liststaff.lastIndexOf(',')+1, liststaff.length());
+            stafflist.add(staff);
+            listid.put(staff.toLowerCase(), staffid);
+        }
+        if (stafflist.size() > 0) {
+            functionCalls.LogStatus("Staff list Available");
+            Staffadapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, stafflist);
+            et_SearchTomeet.setAdapter(Staffadapter);
+            Collections.sort(stafflist);
+            Staffadapter.notifyDataSetChanged();
+            et_SearchTomeet.setThreshold(1);
+            et_SearchTomeet.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    StaffTomeetId = listid.get(parent.getItemAtPosition(position).toString());
+                }
+            });
+        } else {
+            functionCalls.LogStatus("Staff list not Available");
+            Toast.makeText(this, "Staff list not Available", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-
             case R.id.checkindate_btn:
                 CheckinDate = "";
                 searchbtn();
@@ -303,9 +346,10 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                 if (Til_SearchTomeet.getVisibility() != View.VISIBLE) {
                     Til_SearchTomeet.setVisibility(View.VISIBLE);
                 }
+                tomeetcontent();
                 break;
 
-               case R.id.reset_btn:
+            case R.id.reset_btn:
                 fullreset();
                 break;
 
@@ -338,8 +382,18 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                     if (i == 2) {
                         if (searchtomeet) {
                             if (!et_SearchTomeet.getText().toString().equals("")) {
-                                SearchTomeet = et_SearchTomeet.getText().toString();
-                                result = true;
+                                if (!StaffTomeetId.equals("")) {
+                                    SearchTomeet = StaffTomeetId;
+                                } else {
+                                    SearchTomeet = listid.get(et_SearchTomeet.getText().toString().toLowerCase());
+                                }
+                                if (!SearchTomeet.equals("")) {
+                                    result = true;
+                                } else {
+                                    result = false;
+                                    Toast.makeText(Appointments.this, "Please Enter Correct Search ToMeet", Toast.LENGTH_SHORT).show();
+                                    break;
+                                }
                             } else {
                                 result = false;
                                 Toast.makeText(Appointments.this, "Please Enter Search ToMeet", Toast.LENGTH_SHORT).show();
@@ -370,7 +424,7 @@ public class Appointments extends AppCompatActivity implements View.OnClickListe
                     intent.putExtra("ASEARCHNAME", SearchName);
                     intent.putExtra("ASEARCHMOBILE", SearchMobile);
                     intent.putExtra("ASEARCHTOMEET", SearchTomeet);
-                    startActivityForResult(intent, 2);
+                    startActivityForResult(intent, REQUEST_FOR_ACTIVITY_CODE);
                 }
                 break;
         }

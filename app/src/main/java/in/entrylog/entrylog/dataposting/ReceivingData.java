@@ -102,7 +102,8 @@ public class ReceivingData {
                     String message = jo.getString("message");
                     if (message.equals("Success")) {
                         String Staff = jo.getString("staff_name");
-                        list.add(Staff);
+                        String StaffId = jo.getString("staff_id");
+                        list.add(Staff+","+StaffId);
                         if (i == (ja.length()-1)) {
                             details.setStaffExists(true);
                             hashSet.addAll(list);

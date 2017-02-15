@@ -721,7 +721,6 @@ public class ConnectingTask {
         @Override
         protected void onPostExecute(String result) {
             receivingData.AllAppointmentsDetails(result, detailsValue, arrayList, adapters);
-            super.onPostExecute(result);
         }
     }
 
@@ -729,8 +728,7 @@ public class ConnectingTask {
         ArrayList<DetailsValue> arrayList;
         AppointmentAdapters adapters;
         DetailsValue detailsValue;
-        String Organization_ID, result="",Name, Mobile, Tomeet, Date;
-
+        String Organization_ID, result="", Name, Mobile, Tomeet, Date;
 
         public SearchAppointments(ArrayList<DetailsValue> arrayList, AppointmentAdapters adapters, DetailsValue detailsValue,
                                String organization_ID, String name, String mobile, String tomeet,String date) {
@@ -738,17 +736,16 @@ public class ConnectingTask {
             this.adapters = adapters;
             this.detailsValue = detailsValue;
             Organization_ID = organization_ID;
-            Name=name;
-            Mobile=mobile;
-            Tomeet=tomeet;
-            Date=date;
-
+            Name = name;
+            Mobile = mobile;
+            Tomeet = tomeet;
+            Date = date;
         }
 
         @Override
         protected String doInBackground(String... params) {
             try {
-                result = sendingData.SearchAppointments(Organization_ID,Name,Mobile,Tomeet,Date);
+                result = sendingData.SearchAppointments(Organization_ID, Name, Mobile, Tomeet, Date);
             } catch (NullPointerException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -761,7 +758,6 @@ public class ConnectingTask {
         @Override
         protected void onPostExecute(String result) {
             receivingData.AllAppointmentsSearchDetails(result, detailsValue, arrayList, adapters);
-            super.onPostExecute(result);
         }
     }
 }

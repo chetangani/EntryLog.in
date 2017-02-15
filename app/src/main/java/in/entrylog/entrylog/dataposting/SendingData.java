@@ -71,7 +71,7 @@ public class SendingData {
         HashMap<String, String> datamap = new HashMap<>();
         datamap.put("organization_id", organizationid);
         try {
-            response = UrlPostConnection("Staff", datamap);
+            response = UrlPostConnection("Staff1", datamap);
         } catch (IOException e) {
             e.printStackTrace();
         }
